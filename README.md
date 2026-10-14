@@ -231,3 +231,4 @@ Nelle schermate i dati (carta d'identità, ricevute, percorsi) sono di esempio.
 # ScanStudio
 # ScanStudio
 # ScanStudio
+# ScanStudio
