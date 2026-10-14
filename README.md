@@ -228,3 +228,4 @@ docs/screenshots/            schermate usate in questo file
 
 Nelle schermate i dati (carta d'identità, ricevute, percorsi) sono di esempio.
 # ScanStudio
+# ScanStudio
