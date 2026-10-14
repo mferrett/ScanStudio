@@ -1,0 +1,340 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 56;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		06B601CD6AFF74D10B8F5217 /* ScannerManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4028DD951CACB379FD6CB807 /* ScannerManager.swift */; };
+		113F40D50AD5106F1F61A951 /* CenterView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 96D61ADDA6414DD9F96928DD /* CenterView.swift */; };
+		1955AE410CA60404AAD9FDF3 /* DocumentRecognizer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3331C6B51ABC785424DDB784 /* DocumentRecognizer.swift */; };
+		20DDA1EF970C365A16F71374 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 75046E84DAE53AA83B440071 /* Assets.xcassets */; };
+		22779524B49FF18B0C1895D0 /* ImageUtilities.swift in Sources */ = {isa = PBXBuildFile; fileRef = C6DDB4A5542AAFD9A445605F /* ImageUtilities.swift */; };
+		2E1469F028E07E7B213369C6 /* CoreImage.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 0F4CA34ECFCEF7922214A24A /* CoreImage.framework */; };
+		57A7AF5492360352957CBD04 /* ImageCaptureCore.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 5157D82DACAA5D5EA929640E /* ImageCaptureCore.framework */; };
+		5A64D16DF2470E7E12B757AD /* Components.swift in Sources */ = {isa = PBXBuildFile; fileRef = EF8022E96093F9895D731D93 /* Components.swift */; };
+		5BD7ABDE1C43090120549170 /* ScanStudioApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1B52517A87355DF144AEE387 /* ScanStudioApp.swift */; };
+		672CE6F0DD06BCF54326A611 /* Models.swift in Sources */ = {isa = PBXBuildFile; fileRef = 25BB71FB12B2FC9EA994F0FC /* Models.swift */; };
+		7EE97663FE7A55337AEB6ED6 /* PagesPanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = E837FA46F84849413EDE4370 /* PagesPanel.swift */; };
+		88A81FAF0ABF6A970879E95E /* IDCardComposer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 735F47FFE1A5C41395678846 /* IDCardComposer.swift */; };
+		8A445719244CC22F1BC77FDA /* SelectionOverlay.swift in Sources */ = {isa = PBXBuildFile; fileRef = C6637B855045BFEC16BC7F0A /* SelectionOverlay.swift */; };
+		8BEEB136A613914B5704A0CC /* DestinationPreset.swift in Sources */ = {isa = PBXBuildFile; fileRef = 30484625942049D1EB8F2944 /* DestinationPreset.swift */; };
+		21CA2EDB5EF0B9D7143FDA7E /* SettingsPersistence.swift in Sources */ = {isa = PBXBuildFile; fileRef = FCA7F7273EFBD4330D62D20F /* SettingsPersistence.swift */; };
+		95A963A17936367F21BD2065 /* Vision.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = BFEF5BE57B2DAB38D881AE2F /* Vision.framework */; };
+		AF30E94D0734EA1F0A33E9D9 /* AppModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3C7276E3A134AB1B628E4C4E /* AppModel.swift */; };
+		B4D6DE1556EC1CADB3A4E285 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2E47669CD4A2F90DB3F0CFA5 /* ContentView.swift */; };
+		B626BED337C7F3103FB6F4EE /* SidebarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 90912C48824B0501B1C4851C /* SidebarView.swift */; };
+		B65CCBFE2430B6CA26D1BCC7 /* ImageProcessor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1E397BAAE0180DA48494A7BE /* ImageProcessor.swift */; };
+		F379839114B40F36A2481887 /* Exporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29FF9CD0044DF67B6725CD9D /* Exporter.swift */; };
+		FCC3FD86E4513CA009FE50F3 /* PresetsDialog.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4ECE6B150EFE2A888C3634B0 /* PresetsDialog.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		0F4CA34ECFCEF7922214A24A /* CoreImage.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreImage.framework; path = System/Library/Frameworks/CoreImage.framework; sourceTree = SDKROOT; };
+		1B52517A87355DF144AEE387 /* ScanStudioApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScanStudioApp.swift; sourceTree = "<group>"; };
+		1E397BAAE0180DA48494A7BE /* ImageProcessor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImageProcessor.swift; sourceTree = "<group>"; };
+		25BB71FB12B2FC9EA994F0FC /* Models.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Models.swift; sourceTree = "<group>"; };
+		29FF9CD0044DF67B6725CD9D /* Exporter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Exporter.swift; sourceTree = "<group>"; };
+		2E47669CD4A2F90DB3F0CFA5 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
+		30484625942049D1EB8F2944 /* DestinationPreset.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DestinationPreset.swift; sourceTree = "<group>"; };
+		FCA7F7273EFBD4330D62D20F /* SettingsPersistence.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsPersistence.swift; sourceTree = "<group>"; };
+		3331C6B51ABC785424DDB784 /* DocumentRecognizer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DocumentRecognizer.swift; sourceTree = "<group>"; };
+		3C7276E3A134AB1B628E4C4E /* AppModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppModel.swift; sourceTree = "<group>"; };
+		4028DD951CACB379FD6CB807 /* ScannerManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScannerManager.swift; sourceTree = "<group>"; };
+		4ECE6B150EFE2A888C3634B0 /* PresetsDialog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PresetsDialog.swift; sourceTree = "<group>"; };
+		5157D82DACAA5D5EA929640E /* ImageCaptureCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = ImageCaptureCore.framework; path = System/Library/Frameworks/ImageCaptureCore.framework; sourceTree = SDKROOT; };
+		5B35407F6C717D5C423A8B1C /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		735F47FFE1A5C41395678846 /* IDCardComposer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IDCardComposer.swift; sourceTree = "<group>"; };
+		75046E84DAE53AA83B440071 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		90912C48824B0501B1C4851C /* SidebarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SidebarView.swift; sourceTree = "<group>"; };
+		96D61ADDA6414DD9F96928DD /* CenterView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CenterView.swift; sourceTree = "<group>"; };
+		BFEF5BE57B2DAB38D881AE2F /* Vision.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Vision.framework; path = System/Library/Frameworks/Vision.framework; sourceTree = SDKROOT; };
+		C6637B855045BFEC16BC7F0A /* SelectionOverlay.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SelectionOverlay.swift; sourceTree = "<group>"; };
+		C6DDB4A5542AAFD9A445605F /* ImageUtilities.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImageUtilities.swift; sourceTree = "<group>"; };
+		E837FA46F84849413EDE4370 /* PagesPanel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PagesPanel.swift; sourceTree = "<group>"; };
+		EF8022E96093F9895D731D93 /* Components.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Components.swift; sourceTree = "<group>"; };
+		F5BF48AA40CAD7891EB709FC /* ScanStudio.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = ScanStudio.app; sourceTree = BUILT_PRODUCTS_DIR; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		09A82846EB709A06A7813A7E /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				57A7AF5492360352957CBD04 /* ImageCaptureCore.framework in Frameworks */,
+				95A963A17936367F21BD2065 /* Vision.framework in Frameworks */,
+				2E1469F028E07E7B213369C6 /* CoreImage.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		170F56C1B5D848E5957B12C7 /* Views */ = {
+			isa = PBXGroup;
+			children = (
+				96D61ADDA6414DD9F96928DD /* CenterView.swift */,
+				EF8022E96093F9895D731D93 /* Components.swift */,
+				2E47669CD4A2F90DB3F0CFA5 /* ContentView.swift */,
+				E837FA46F84849413EDE4370 /* PagesPanel.swift */,
+				4ECE6B150EFE2A888C3634B0 /* PresetsDialog.swift */,
+				C6637B855045BFEC16BC7F0A /* SelectionOverlay.swift */,
+				90912C48824B0501B1C4851C /* SidebarView.swift */,
+			);
+			path = Views;
+			sourceTree = "<group>";
+		};
+		39310CA340428E3F21D76434 /* Sources/ScanStudio */ = {
+			isa = PBXGroup;
+			children = (
+				170F56C1B5D848E5957B12C7 /* Views */,
+				3C7276E3A134AB1B628E4C4E /* AppModel.swift */,
+				30484625942049D1EB8F2944 /* DestinationPreset.swift */,
+				FCA7F7273EFBD4330D62D20F /* SettingsPersistence.swift */,
+				3331C6B51ABC785424DDB784 /* DocumentRecognizer.swift */,
+				29FF9CD0044DF67B6725CD9D /* Exporter.swift */,
+				735F47FFE1A5C41395678846 /* IDCardComposer.swift */,
+				1E397BAAE0180DA48494A7BE /* ImageProcessor.swift */,
+				C6DDB4A5542AAFD9A445605F /* ImageUtilities.swift */,
+				25BB71FB12B2FC9EA994F0FC /* Models.swift */,
+				1B52517A87355DF144AEE387 /* ScanStudioApp.swift */,
+				4028DD951CACB379FD6CB807 /* ScannerManager.swift */,
+			);
+			path = Sources/ScanStudio;
+			sourceTree = "<group>";
+		};
+		77AFD2ADB33CF005311C0A74 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				5157D82DACAA5D5EA929640E /* ImageCaptureCore.framework */,
+				BFEF5BE57B2DAB38D881AE2F /* Vision.framework */,
+				0F4CA34ECFCEF7922214A24A /* CoreImage.framework */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
+		956934E60556FDCE0710C957 = {
+			isa = PBXGroup;
+			children = (
+				39310CA340428E3F21D76434 /* Sources/ScanStudio */,
+				D3A1D7DE1CAC7DE87512B7E2 /* Resources */,
+				77AFD2ADB33CF005311C0A74 /* Frameworks */,
+				CC0F68FE2D81F9614883F277 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		CC0F68FE2D81F9614883F277 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				F5BF48AA40CAD7891EB709FC /* ScanStudio.app */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		D3A1D7DE1CAC7DE87512B7E2 /* Resources */ = {
+			isa = PBXGroup;
+			children = (
+				5B35407F6C717D5C423A8B1C /* Info.plist */,
+				75046E84DAE53AA83B440071 /* Assets.xcassets */,
+			);
+			path = Resources;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		42AEFBAE01D2DFD981F7DA7D /* ScanStudio */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 9CB938BFDD04126E260AD355 /* Build configuration list for PBXNativeTarget "ScanStudio" */;
+			buildPhases = (
+				838248CAA0E23712048A3C4E /* Sources */,
+				09A82846EB709A06A7813A7E /* Frameworks */,
+				B38B8EFCFFAEB0E290034F10 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = ScanStudio;
+			productName = ScanStudio;
+			productReference = F5BF48AA40CAD7891EB709FC /* ScanStudio.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		46F86FAA6BBF9AC94A7E4595 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = 1;
+				LastSwiftUpdateCheck = 1500;
+				LastUpgradeCheck = 1500;
+			};
+			buildConfigurationList = C65C31100E411CC42337DAE2 /* Build configuration list for PBXProject "ScanStudio" */;
+			compatibilityVersion = "Xcode 14.0";
+			developmentRegion = it;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				it,
+				Base,
+			);
+			mainGroup = 956934E60556FDCE0710C957;
+			productRefGroup = CC0F68FE2D81F9614883F277 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				42AEFBAE01D2DFD981F7DA7D /* ScanStudio */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		B38B8EFCFFAEB0E290034F10 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				20DDA1EF970C365A16F71374 /* Assets.xcassets in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		838248CAA0E23712048A3C4E /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				113F40D50AD5106F1F61A951 /* CenterView.swift in Sources */,
+				5A64D16DF2470E7E12B757AD /* Components.swift in Sources */,
+				B4D6DE1556EC1CADB3A4E285 /* ContentView.swift in Sources */,
+				7EE97663FE7A55337AEB6ED6 /* PagesPanel.swift in Sources */,
+				FCC3FD86E4513CA009FE50F3 /* PresetsDialog.swift in Sources */,
+				8A445719244CC22F1BC77FDA /* SelectionOverlay.swift in Sources */,
+				B626BED337C7F3103FB6F4EE /* SidebarView.swift in Sources */,
+				AF30E94D0734EA1F0A33E9D9 /* AppModel.swift in Sources */,
+				8BEEB136A613914B5704A0CC /* DestinationPreset.swift in Sources */,
+				21CA2EDB5EF0B9D7143FDA7E /* SettingsPersistence.swift in Sources */,
+				1955AE410CA60404AAD9FDF3 /* DocumentRecognizer.swift in Sources */,
+				F379839114B40F36A2481887 /* Exporter.swift in Sources */,
+				88A81FAF0ABF6A970879E95E /* IDCardComposer.swift in Sources */,
+				B65CCBFE2430B6CA26D1BCC7 /* ImageProcessor.swift in Sources */,
+				22779524B49FF18B0C1895D0 /* ImageUtilities.swift in Sources */,
+				672CE6F0DD06BCF54326A611 /* Models.swift in Sources */,
+				5BD7ABDE1C43090120549170 /* ScanStudioApp.swift in Sources */,
+				06B601CD6AFF74D10B8F5217 /* ScannerManager.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		0DAD1609FF21DFE9FCDE033B /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_TESTABILITY = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = macosx;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		A9AD4BEA15A87FA06F774E16 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
+				CODE_SIGN_IDENTITY = "-";
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDDEN_SYMBOLS_IN_FRAMEWORKS = NO;
+				CURRENT_PROJECT_VERSION = 1;
+				ENABLE_HARDENED_RUNTIME = NO;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = Resources/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = "Scan Studio";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = local.scanstudio.app;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
+		B91B4934A1FB728BCC6A5C90 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
+				CODE_SIGN_IDENTITY = "-";
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDDEN_SYMBOLS_IN_FRAMEWORKS = NO;
+				CURRENT_PROJECT_VERSION = 1;
+				ENABLE_HARDENED_RUNTIME = NO;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = Resources/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = "Scan Studio";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = local.scanstudio.app;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		BE2A70055679D1F0D48906A5 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				SDKROOT = macosx;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		9CB938BFDD04126E260AD355 /* Build configuration list for PBXNativeTarget "ScanStudio" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				B91B4934A1FB728BCC6A5C90 /* Debug */,
+				A9AD4BEA15A87FA06F774E16 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		C65C31100E411CC42337DAE2 /* Build configuration list for PBXProject "ScanStudio" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				0DAD1609FF21DFE9FCDE033B /* Debug */,
+				BE2A70055679D1F0D48906A5 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = 46F86FAA6BBF9AC94A7E4595 /* Project object */;
+}
