@@ -1,5 +1,22 @@
+# Swift Package Manager
 .build/
-build/
 .swiftpm/
+
+# Xcode build products and per-user settings
+build/
+DerivedData/
 xcuserdata/
+*.xcuserstate
+*.xccheckout
+*.moved-aside
+*.xcresult
+
+# Python benchmark tooling
+__pycache__/
+*.py[cod]
+.venv/
+
+# macOS metadata
 .DS_Store
+.AppleDouble
+.LSOverride

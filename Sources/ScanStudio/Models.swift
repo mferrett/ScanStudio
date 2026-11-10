@@ -12,17 +12,17 @@ enum ColorMode: String, CaseIterable, Identifiable, Codable {
 
     var label: String {
         switch self {
-        case .color: return "Colore"
-        case .grayscale: return "Grigi"
-        case .blackWhite: return "B/N"
+        case .color: return localized("Colore")
+        case .grayscale: return localized("Grigi")
+        case .blackWhite: return localized("B/N")
         }
     }
 
     var longLabel: String {
         switch self {
-        case .color: return "Colore"
-        case .grayscale: return "Scala di grigi"
-        case .blackWhite: return "Bianco e nero"
+        case .color: return localized("Colore")
+        case .grayscale: return localized("Scala di grigi")
+        case .blackWhite: return localized("Bianco e nero")
         }
     }
 }
@@ -32,11 +32,11 @@ enum ColorMode: String, CaseIterable, Identifiable, Codable {
 extension ICScannerFunctionalUnitType {
     var label: String {
         switch self {
-        case .flatbed: return "Piano"
-        case .documentFeeder: return "Alimentatore (ADF)"
-        case .positiveTransparency: return "Diapositive"
-        case .negativeTransparency: return "Negativi"
-        @unknown default: return "Altro"
+        case .flatbed: return localized("Piano")
+        case .documentFeeder: return localized("Alimentatore (ADF)")
+        case .positiveTransparency: return localized("Diapositive")
+        case .negativeTransparency: return localized("Negativi")
+        @unknown default: return localized("Altro")
         }
     }
 }
@@ -52,9 +52,9 @@ enum FeederPageSize: String, CaseIterable, Identifiable {
         switch self {
         case .a4: return "A4"
         case .a5: return "A5"
-        case .letter: return "Lettera US"
-        case .legal: return "Legal US"
-        case .maximum: return "Massimo"
+        case .letter: return localized("Lettera US")
+        case .legal: return localized("Legal US")
+        case .maximum: return localized("Massimo")
         }
     }
 
@@ -79,8 +79,8 @@ enum DocumentType: String, CaseIterable, Identifiable {
 
     var label: String {
         switch self {
-        case .standard: return "Scansione classica"
-        case .idCard: return "Documento di identità"
+        case .standard: return localized("Scansione classica")
+        case .idCard: return localized("Documento di identità")
         }
     }
 }
@@ -98,9 +98,20 @@ struct ScanSettings {
     var selection = CGRect(x: 0, y: 0, width: 1, height: 1)
     var feederSize: FeederPageSize = .a4
     var duplex = false
+    /// One full-bed scan, with detected objects separated afterwards.
+    var multiCrop = false
 }
 
 // MARK: - Regolazioni immagine
+
+struct AdvancedAdjustments: Hashable, Codable {
+    var deskew = false
+    var descreen: Double = 0
+    var dustRemoval = false
+    var restoreColors = false
+    var gutter: Double = 0
+    var gutterOnRight = false
+}
 
 struct Adjustments: Hashable, Codable {
     var brightness: Double = 0      // Luminosità  -100…100
@@ -113,6 +124,12 @@ struct Adjustments: Hashable, Codable {
     var threshold: Double = 50      // Soglia B/N  0…100
     var autoEnhance = false
     var invert = false
+    // Optional preserves decoding of preferences created before these controls existed.
+    private var advancedStorage: AdvancedAdjustments? = nil
+    var advanced: AdvancedAdjustments {
+        get { advancedStorage ?? AdvancedAdjustments() }
+        set { advancedStorage = newValue }
+    }
 
     static let neutral = Adjustments()
 }
@@ -140,51 +157,77 @@ struct ScannedPage: Identifiable {
 // MARK: - Esportazione
 
 enum ExportFormat: String, CaseIterable, Identifiable {
-    case pdf, png, jpeg, tiff
+    case pdf, pdfSingle, png, jpeg, tiff, tiffSingle
 
     var id: String { rawValue }
 
     var label: String {
         switch self {
-        case .pdf: return "PDF (multipagina)"
+        case .pdf: return localized("PDF (multipagina)")
+        case .pdfSingle: return localized("PDF (pagina singola)")
         case .png: return "PNG"
         case .jpeg: return "JPEG"
-        case .tiff: return "TIFF (multipagina)"
+        case .tiff: return localized("TIFF (multipagina)")
+        case .tiffSingle: return localized("TIFF (pagina singola)")
         }
     }
 
     var utType: UTType {
         switch self {
-        case .pdf: return .pdf
+        case .pdf, .pdfSingle: return .pdf
         case .png: return .png
         case .jpeg: return .jpeg
-        case .tiff: return .tiff
+        case .tiff, .tiffSingle: return .tiff
         }
     }
 
     var fileExtension: String {
         switch self {
-        case .pdf: return "pdf"
+        case .pdf, .pdfSingle: return "pdf"
         case .png: return "png"
         case .jpeg: return "jpg"
-        case .tiff: return "tiff"
+        case .tiff, .tiffSingle: return "tiff"
         }
     }
 
     /// I formati che non supportano più pagine salvano un file per pagina
     var isMultiPage: Bool { self == .pdf || self == .tiff }
+    var isPDF: Bool { self == .pdf || self == .pdfSingle }
+    var isSeparateDocument: Bool { !isMultiPage }
+    var singlePageVariant: ExportFormat {
+        switch self { case .pdf: .pdfSingle; case .tiff: .tiffSingle; default: self }
+    }
 }
 
 enum ExportScope: String, CaseIterable, Identifiable {
-    case all, selected
+    case all, selected, multiCrop
     var id: String { rawValue }
-    var label: String { self == .all ? "Tutte" : "Solo selezionata" }
+    var label: String {
+        switch self { case .all: localized("Tutte"); case .selected: localized("Selezionata"); case .multiCrop: localized("Ultimi ritagli") }
+    }
 }
 
 struct ExportOptions {
     var format: ExportFormat = .pdf
     var jpegQuality: Double = 0.85
     var pdfUseJPEG = true
-    var ocr = true
+    var exportMarkdown = false
     var scope: ExportScope = .all
+}
+
+/// Localized UI strings; SwiftPM keeps resources in its own bundle.
+var localizationBundle: Bundle {
+    #if SWIFT_PACKAGE
+    return .module
+    #else
+    return .main
+    #endif
+}
+
+func localized(_ key: String) -> String {
+    localizationBundle.localizedString(forKey: key, value: key, table: nil)
+}
+
+func localizedFormat(_ key: String, _ arguments: CVarArg...) -> String {
+    String(format: localized(key), locale: Locale.current, arguments: arguments)
 }

@@ -27,6 +27,41 @@ enum ImageProcessor {
         img = img.transformed(by: CGAffineTransform(translationX: -img.extent.minX, y: -img.extent.minY))
         let extent = img.extent
 
+        let advanced = a.advanced
+
+        // Optional software approximations; the original scan remains untouched.
+        if advanced.descreen > 0 {
+            let blur = CIFilter.gaussianBlur()
+            blur.inputImage = img.clampedToExtent()
+            blur.radius = Float(advanced.descreen / 100 * 1.2)
+            img = (blur.outputImage ?? img).cropped(to: extent)
+        }
+        if advanced.dustRemoval {
+            let median = CIFilter.median()
+            median.inputImage = img
+            img = (median.outputImage ?? img).cropped(to: extent)
+        }
+        if advanced.restoreColors {
+            let filter = CIFilter.colorControls()
+            filter.inputImage = img
+            filter.saturation = 1.18
+            filter.contrast = 1.06
+            img = filter.outputImage ?? img
+        }
+        if advanced.gutter > 0 {
+            let gradient = CIFilter.linearGradient()
+            let edge = advanced.gutterOnRight ? extent.maxX : extent.minX
+            let inner = advanced.gutterOnRight ? edge - extent.width * 0.18 : edge + extent.width * 0.18
+            gradient.point0 = CGPoint(x: edge, y: extent.midY)
+            gradient.point1 = CGPoint(x: inner, y: extent.midY)
+            let strength = CGFloat(advanced.gutter / 100 * 0.55)
+            gradient.color0 = CIColor(red: strength, green: strength, blue: strength)
+            gradient.color1 = CIColor(red: 0, green: 0, blue: 0)
+            let blend = CIFilter.screenBlendMode()
+            blend.inputImage = gradient.outputImage?.cropped(to: extent)
+            blend.backgroundImage = img
+            img = (blend.outputImage ?? img).cropped(to: extent)
+        }
         // Miglioramento automatico
         if a.autoEnhance {
             for filter in img.autoAdjustmentFilters(options: [.redEye: false]) {
@@ -100,7 +135,8 @@ enum ImageProcessor {
                        adjustments: Adjustments,
                        mode: ColorMode,
                        quarterTurns: Int) -> CGImage? {
-        let output = pipeline(CIImage(cgImage: image), adjustments: adjustments, mode: mode, quarterTurns: quarterTurns)
+        let source = adjustments.advanced.deskew ? (ImageUtilities.deskew(image) ?? image) : image
+        let output = pipeline(CIImage(cgImage: source), adjustments: adjustments, mode: mode, quarterTurns: quarterTurns)
         if mode == .color {
             let space = CGColorSpace(name: CGColorSpace.sRGB) ?? CGColorSpaceCreateDeviceRGB()
             return context.createCGImage(output, from: output.extent, format: .RGBA8, colorSpace: space)

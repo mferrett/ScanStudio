@@ -67,7 +67,7 @@ struct SliderRow: View {
             HStack {
                 Text(title)
                     .onTapGesture(count: 2) { value = defaultValue }
-                    .help("Doppio clic per ripristinare")
+                    .help(localized("Doppio clic per ripristinare"))
                 Spacer()
                 Text(range.lowerBound < 0 && value.rounded() != 0
                      ? String(format: "%+.0f", value)
@@ -79,7 +79,7 @@ struct SliderRow: View {
                 .controlSize(.small)
         }
         .contextMenu {
-            Button("Ripristina") { value = defaultValue }
+            Button(localized("Ripristina")) { value = defaultValue }
         }
     }
 }

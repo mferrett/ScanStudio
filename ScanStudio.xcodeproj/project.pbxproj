@@ -7,10 +7,14 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		EEEEEEEE0000000000000001 /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = EEEEEEEE0000000000000002 /* InfoPlist.strings */; };
+		DDDDDDDD0000000000000001 /* Localizable.strings in Resources */ = {isa = PBXBuildFile; fileRef = DDDDDDDD0000000000000002 /* Localizable.strings */; };
+        BBBBBBBB0000000000000001 /* AppIcon.icon in Resources */ = {isa = PBXBuildFile; fileRef = BBBBBBBB0000000000000002 /* AppIcon.icon */; };
 		06B601CD6AFF74D10B8F5217 /* ScannerManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4028DD951CACB379FD6CB807 /* ScannerManager.swift */; };
 		113F40D50AD5106F1F61A951 /* CenterView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 96D61ADDA6414DD9F96928DD /* CenterView.swift */; };
 		1955AE410CA60404AAD9FDF3 /* DocumentRecognizer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3331C6B51ABC785424DDB784 /* DocumentRecognizer.swift */; };
 		20DDA1EF970C365A16F71374 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 75046E84DAE53AA83B440071 /* Assets.xcassets */; };
+		21CA2EDB5EF0B9D7143FDA7E /* SettingsPersistence.swift in Sources */ = {isa = PBXBuildFile; fileRef = FCA7F7273EFBD4330D62D20F /* SettingsPersistence.swift */; };
 		22779524B49FF18B0C1895D0 /* ImageUtilities.swift in Sources */ = {isa = PBXBuildFile; fileRef = C6DDB4A5542AAFD9A445605F /* ImageUtilities.swift */; };
 		2E1469F028E07E7B213369C6 /* CoreImage.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 0F4CA34ECFCEF7922214A24A /* CoreImage.framework */; };
 		57A7AF5492360352957CBD04 /* ImageCaptureCore.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 5157D82DACAA5D5EA929640E /* ImageCaptureCore.framework */; };
@@ -21,8 +25,9 @@
 		88A81FAF0ABF6A970879E95E /* IDCardComposer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 735F47FFE1A5C41395678846 /* IDCardComposer.swift */; };
 		8A445719244CC22F1BC77FDA /* SelectionOverlay.swift in Sources */ = {isa = PBXBuildFile; fileRef = C6637B855045BFEC16BC7F0A /* SelectionOverlay.swift */; };
 		8BEEB136A613914B5704A0CC /* DestinationPreset.swift in Sources */ = {isa = PBXBuildFile; fileRef = 30484625942049D1EB8F2944 /* DestinationPreset.swift */; };
-		21CA2EDB5EF0B9D7143FDA7E /* SettingsPersistence.swift in Sources */ = {isa = PBXBuildFile; fileRef = FCA7F7273EFBD4330D62D20F /* SettingsPersistence.swift */; };
 		95A963A17936367F21BD2065 /* Vision.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = BFEF5BE57B2DAB38D881AE2F /* Vision.framework */; };
+		CCCCCCCC0000000000000001 /* MarkdownStructure.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCCCCCCC0000000000000002 /* MarkdownStructure.swift */; };
+		AAAAAAAA0000000000000001 /* DocumentOCR.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAAAAAAA0000000000000002 /* DocumentOCR.swift */; };
 		AF30E94D0734EA1F0A33E9D9 /* AppModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3C7276E3A134AB1B628E4C4E /* AppModel.swift */; };
 		B4D6DE1556EC1CADB3A4E285 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2E47669CD4A2F90DB3F0CFA5 /* ContentView.swift */; };
 		B626BED337C7F3103FB6F4EE /* SidebarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 90912C48824B0501B1C4851C /* SidebarView.swift */; };
@@ -32,6 +37,21 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		EEEEEEEE000000000000000A /* it */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = it; path = Sources/ScanStudio/Resources/it.lproj/InfoPlist.strings; sourceTree = SOURCE_ROOT; };
+		EEEEEEEE000000000000000B /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = Sources/ScanStudio/Resources/en.lproj/InfoPlist.strings; sourceTree = SOURCE_ROOT; };
+		EEEEEEEE000000000000000C /* es */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = es; path = Sources/ScanStudio/Resources/es.lproj/InfoPlist.strings; sourceTree = SOURCE_ROOT; };
+		EEEEEEEE000000000000000D /* fr */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = fr; path = Sources/ScanStudio/Resources/fr.lproj/InfoPlist.strings; sourceTree = SOURCE_ROOT; };
+		EEEEEEEE000000000000000E /* de */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = de; path = Sources/ScanStudio/Resources/de.lproj/InfoPlist.strings; sourceTree = SOURCE_ROOT; };
+		EEEEEEEE000000000000000F /* pt */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = pt; path = Sources/ScanStudio/Resources/pt.lproj/InfoPlist.strings; sourceTree = SOURCE_ROOT; };
+
+		DDDDDDDD000000000000000A /* it */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = it; path = Sources/ScanStudio/Resources/it.lproj/Localizable.strings; sourceTree = SOURCE_ROOT; };
+		DDDDDDDD000000000000000B /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = Sources/ScanStudio/Resources/en.lproj/Localizable.strings; sourceTree = SOURCE_ROOT; };
+		DDDDDDDD000000000000000C /* es */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = es; path = Sources/ScanStudio/Resources/es.lproj/Localizable.strings; sourceTree = SOURCE_ROOT; };
+		DDDDDDDD000000000000000D /* fr */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = fr; path = Sources/ScanStudio/Resources/fr.lproj/Localizable.strings; sourceTree = SOURCE_ROOT; };
+		DDDDDDDD000000000000000E /* de */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = de; path = Sources/ScanStudio/Resources/de.lproj/Localizable.strings; sourceTree = SOURCE_ROOT; };
+		DDDDDDDD000000000000000F /* pt */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = pt; path = Sources/ScanStudio/Resources/pt.lproj/Localizable.strings; sourceTree = SOURCE_ROOT; };
+
+        BBBBBBBB0000000000000002 /* AppIcon.icon */ = {isa = PBXFileReference; lastKnownFileType = folder.iconcomposer.icon; path = AppIcon.icon; sourceTree = "<group>"; };
 		0F4CA34ECFCEF7922214A24A /* CoreImage.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreImage.framework; path = System/Library/Frameworks/CoreImage.framework; sourceTree = SDKROOT; };
 		1B52517A87355DF144AEE387 /* ScanStudioApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScanStudioApp.swift; sourceTree = "<group>"; };
 		1E397BAAE0180DA48494A7BE /* ImageProcessor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImageProcessor.swift; sourceTree = "<group>"; };
@@ -39,7 +59,6 @@
 		29FF9CD0044DF67B6725CD9D /* Exporter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Exporter.swift; sourceTree = "<group>"; };
 		2E47669CD4A2F90DB3F0CFA5 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		30484625942049D1EB8F2944 /* DestinationPreset.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DestinationPreset.swift; sourceTree = "<group>"; };
-		FCA7F7273EFBD4330D62D20F /* SettingsPersistence.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsPersistence.swift; sourceTree = "<group>"; };
 		3331C6B51ABC785424DDB784 /* DocumentRecognizer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DocumentRecognizer.swift; sourceTree = "<group>"; };
 		3C7276E3A134AB1B628E4C4E /* AppModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppModel.swift; sourceTree = "<group>"; };
 		4028DD951CACB379FD6CB807 /* ScannerManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScannerManager.swift; sourceTree = "<group>"; };
@@ -50,12 +69,15 @@
 		75046E84DAE53AA83B440071 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		90912C48824B0501B1C4851C /* SidebarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SidebarView.swift; sourceTree = "<group>"; };
 		96D61ADDA6414DD9F96928DD /* CenterView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CenterView.swift; sourceTree = "<group>"; };
+		CCCCCCCC0000000000000002 /* MarkdownStructure.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MarkdownStructure.swift; sourceTree = "<group>"; };
+		AAAAAAAA0000000000000002 /* DocumentOCR.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DocumentOCR.swift; sourceTree = "<group>"; };
 		BFEF5BE57B2DAB38D881AE2F /* Vision.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Vision.framework; path = System/Library/Frameworks/Vision.framework; sourceTree = SDKROOT; };
 		C6637B855045BFEC16BC7F0A /* SelectionOverlay.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SelectionOverlay.swift; sourceTree = "<group>"; };
 		C6DDB4A5542AAFD9A445605F /* ImageUtilities.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImageUtilities.swift; sourceTree = "<group>"; };
 		E837FA46F84849413EDE4370 /* PagesPanel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PagesPanel.swift; sourceTree = "<group>"; };
 		EF8022E96093F9895D731D93 /* Components.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Components.swift; sourceTree = "<group>"; };
 		F5BF48AA40CAD7891EB709FC /* ScanStudio.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = ScanStudio.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		FCA7F7273EFBD4330D62D20F /* SettingsPersistence.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsPersistence.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -93,6 +115,8 @@
 				3C7276E3A134AB1B628E4C4E /* AppModel.swift */,
 				30484625942049D1EB8F2944 /* DestinationPreset.swift */,
 				FCA7F7273EFBD4330D62D20F /* SettingsPersistence.swift */,
+				AAAAAAAA0000000000000002 /* DocumentOCR.swift */,
+				CCCCCCCC0000000000000002 /* MarkdownStructure.swift */,
 				3331C6B51ABC785424DDB784 /* DocumentRecognizer.swift */,
 				29FF9CD0044DF67B6725CD9D /* Exporter.swift */,
 				735F47FFE1A5C41395678846 /* IDCardComposer.swift */,
@@ -137,7 +161,10 @@
 			isa = PBXGroup;
 			children = (
 				5B35407F6C717D5C423A8B1C /* Info.plist */,
+				BBBBBBBB0000000000000002 /* AppIcon.icon */,
 				75046E84DAE53AA83B440071 /* Assets.xcassets */,
+				DDDDDDDD0000000000000002 /* Localizable.strings */,
+				EEEEEEEE0000000000000002 /* InfoPlist.strings */,
 			);
 			path = Resources;
 			sourceTree = "<group>";
@@ -178,6 +205,11 @@
 			hasScannedForEncodings = 0;
 			knownRegions = (
 				it,
+				en,
+				es,
+				fr,
+				de,
+				pt,
 				Base,
 			);
 			mainGroup = 956934E60556FDCE0710C957;
@@ -195,11 +227,43 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				BBBBBBBB0000000000000001 /* AppIcon.icon in Resources */,
 				20DDA1EF970C365A16F71374 /* Assets.xcassets in Resources */,
+				DDDDDDDD0000000000000001 /* Localizable.strings in Resources */,
+				EEEEEEEE0000000000000001 /* InfoPlist.strings in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXResourcesBuildPhase section */
+
+/* Begin PBXVariantGroup section */
+		DDDDDDDD0000000000000002 /* Localizable.strings */ = {
+			isa = PBXVariantGroup;
+			children = (
+				DDDDDDDD000000000000000A /* it */,
+				DDDDDDDD000000000000000B /* en */,
+				DDDDDDDD000000000000000C /* es */,
+				DDDDDDDD000000000000000D /* fr */,
+				DDDDDDDD000000000000000E /* de */,
+				DDDDDDDD000000000000000F /* pt */,
+			);
+			name = Localizable.strings;
+			sourceTree = "<group>";
+		};
+		EEEEEEEE0000000000000002 /* InfoPlist.strings */ = {
+			isa = PBXVariantGroup;
+			children = (
+				EEEEEEEE000000000000000A /* it */,
+				EEEEEEEE000000000000000B /* en */,
+				EEEEEEEE000000000000000C /* es */,
+				EEEEEEEE000000000000000D /* fr */,
+				EEEEEEEE000000000000000E /* de */,
+				EEEEEEEE000000000000000F /* pt */,
+			);
+			name = InfoPlist.strings;
+			sourceTree = "<group>";
+		};
+/* End PBXVariantGroup section */
 
 /* Begin PBXSourcesBuildPhase section */
 		838248CAA0E23712048A3C4E /* Sources */ = {
@@ -216,6 +280,8 @@
 				AF30E94D0734EA1F0A33E9D9 /* AppModel.swift in Sources */,
 				8BEEB136A613914B5704A0CC /* DestinationPreset.swift in Sources */,
 				21CA2EDB5EF0B9D7143FDA7E /* SettingsPersistence.swift in Sources */,
+				AAAAAAAA0000000000000001 /* DocumentOCR.swift in Sources */,
+				CCCCCCCC0000000000000001 /* MarkdownStructure.swift in Sources */,
 				1955AE410CA60404AAD9FDF3 /* DocumentRecognizer.swift in Sources */,
 				F379839114B40F36A2481887 /* Exporter.swift in Sources */,
 				88A81FAF0ABF6A970879E95E /* IDCardComposer.swift in Sources */,
@@ -239,7 +305,7 @@
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				ENABLE_TESTABILITY = YES;
 				GCC_OPTIMIZATION_LEVEL = 0;
-				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MACOSX_DEPLOYMENT_TARGET = 26.0;
 				ONLY_ACTIVE_ARCH = YES;
 				SDKROOT = macosx;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
@@ -305,7 +371,7 @@
 				CLANG_ENABLE_MODULES = YES;
 				CLANG_ENABLE_OBJC_ARC = YES;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
-				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MACOSX_DEPLOYMENT_TARGET = 26.0;
 				SDKROOT = macosx;
 				SWIFT_COMPILATION_MODE = wholemodule;
 				SWIFT_OPTIMIZATION_LEVEL = "-O";

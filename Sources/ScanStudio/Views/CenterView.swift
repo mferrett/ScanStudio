@@ -16,7 +16,9 @@ struct CenterView: View {
                 Divider()
             }
             Group {
-                if let page = model.selectedPage {
+                if scanner.isBusy {
+                    ScanAreaView(scanner: scanner)
+                } else if let page = model.selectedPage {
                     PageDetailView(page: page)
                         .id(page.id)
                 } else {
@@ -34,7 +36,7 @@ struct CenterView: View {
                       allowsMultipleSelection: true) { result in
             if case .success(let urls) = result { model.importFiles(urls) }
         }
-        .alert("Scanner", isPresented: Binding(
+        .alert(localized("Scanner"), isPresented: Binding(
             get: { scanner.errorMessage != nil },
             set: { if !$0 { scanner.errorMessage = nil } }
         )) {
@@ -53,43 +55,53 @@ struct CenterView: View {
                 Button {
                     model.cancelScan()
                 } label: {
-                    Label("Interrompi", systemImage: "stop.circle")
+                    Label(localized("Interrompi"), systemImage: "stop.circle")
                 }
+                .buttonStyle(.bordered)
+                .labelStyle(.titleAndIcon)
                 .keyboardShortcut(".", modifiers: .command)
             }
 
             Button {
                 model.preview()
             } label: {
-                Label("Anteprima", systemImage: "eye")
+                Label(localized("Anteprima"), systemImage: "eye")
             }
-            .help("Esegue una scansione rapida a bassa risoluzione (⇧⌘P)")
+            .buttonStyle(.bordered)
+            .labelStyle(.titleAndIcon)
+            .help(localized("Esegue una scansione rapida a bassa risoluzione (⇧⌘P)"))
             .keyboardShortcut("p", modifiers: [.command, .shift])
             .disabled(!scanner.isReady || model.settings.source == .documentFeeder)
 
             Button {
                 model.scan()
             } label: {
-                Label("Scansiona", systemImage: "doc.viewfinder")
+                Label(localized("Scansiona"), systemImage: "doc.viewfinder")
             }
-            .help("Acquisisce la pagina e la aggiunge al documento (⌘R)")
+            .buttonStyle(.borderedProminent)
+            .labelStyle(.titleAndIcon)
+            .help(localized("Acquisisce la pagina e la aggiunge al documento (⌘R)"))
             .keyboardShortcut("r", modifiers: .command)
             .disabled(!scanner.isReady)
 
             Button {
                 showImporter = true
             } label: {
-                Label("Importa", systemImage: "photo.badge.plus")
+                Label(localized("Importa"), systemImage: "photo.badge.plus")
             }
-            .help("Aggiunge immagini o PDF esistenti come pagine (⌘O)")
+            .buttonStyle(.bordered)
+            .labelStyle(.titleAndIcon)
+            .help(localized("Aggiunge immagini o PDF esistenti come pagine (⌘O)"))
             .keyboardShortcut("o", modifiers: .command)
 
             Button {
                 model.save()
             } label: {
-                Label("Salva", systemImage: "square.and.arrow.down")
+                Label(localized("Salva"), systemImage: "square.and.arrow.down")
             }
-            .help("Salva nel formato scelto (⌘S)")
+            .buttonStyle(.bordered)
+            .labelStyle(.titleAndIcon)
+            .help(localized("Salva nel formato scelto (⌘S)"))
             .keyboardShortcut("s", modifiers: .command)
             .disabled(model.pages.isEmpty)
         }
@@ -101,18 +113,18 @@ struct CenterView: View {
         HStack(spacing: 10) {
             if model.selectedPage != nil, let index = model.selectedIndex {
                 Button {
-                    model.selectedPageID = nil
+                    model.selectPageForViewing(nil)
                 } label: {
-                    Label("Area di scansione", systemImage: "chevron.left")
+                    Label(localized("Area di scansione"), systemImage: "chevron.left")
                 }
                 .buttonStyle(.borderless)
 
-                Text("Pagina \(index + 1) di \(model.pages.count)")
+                Text(localizedFormat("Pagina %lld di %lld", index + 1, model.pages.count))
                     .font(.headline)
 
                 Spacer()
 
-                Picker("Modalità", selection: $model.selectedPageMode) {
+                Picker(localized("Modalità"), selection: $model.selectedPageMode) {
                     ForEach(ColorMode.allCases) { Text($0.label).tag($0) }
                 }
                 .pickerStyle(.segmented)
@@ -120,13 +132,19 @@ struct CenterView: View {
                 .frame(width: 200)
 
                 Button { model.rotateSelected(-1) } label: { Image(systemName: "rotate.left") }
-                    .help("Ruota a sinistra")
+                    .buttonStyle(.bordered)
+                    .accessibilityLabel(localized("Ruota a sinistra"))
+                    .help(localized("Ruota a sinistra"))
                 Button { model.rotateSelected(1) } label: { Image(systemName: "rotate.right") }
-                    .help("Ruota a destra")
+                    .buttonStyle(.bordered)
+                    .accessibilityLabel(localized("Ruota a destra"))
+                    .help(localized("Ruota a destra"))
                 Button(role: .destructive) { model.deleteSelected() } label: { Image(systemName: "trash") }
-                    .help("Elimina pagina")
+                    .buttonStyle(.bordered)
+                    .accessibilityLabel(localized("Elimina pagina"))
+                    .help(localized("Elimina pagina"))
             } else {
-                Text("Area di scansione").font(.headline)
+                Text(localized("Area di scansione")).font(.headline)
                 Spacer()
                 if model.settings.source != .documentFeeder {
                     Button {
@@ -135,17 +153,20 @@ struct CenterView: View {
                         if model.isDetecting {
                             ProgressView().controlSize(.small)
                         } else {
-                            Label("Rileva documento", systemImage: "viewfinder")
+                            Label(localized("Rileva documento"), systemImage: "viewfinder")
                         }
                     }
-                    .disabled(scanner.overviewImage == nil || model.isDetecting)
-                    .help("Seleziona automaticamente il documento nell'anteprima")
+                    .buttonStyle(.bordered)
+                    .disabled(scanner.overviewImage == nil || model.isDetecting || scanner.isBusy)
+                    .help(localized("Seleziona automaticamente il documento nell'anteprima"))
 
                     Button {
                         model.selectWholeArea()
                     } label: {
-                        Label("Tutto il piano", systemImage: "rectangle.dashed")
+                        Label(localized("Tutto il piano"), systemImage: "rectangle.dashed")
                     }
+                    .buttonStyle(.bordered)
+                    .disabled(scanner.isBusy)
                 }
             }
         }
@@ -165,7 +186,7 @@ struct CenterView: View {
                 .foregroundStyle(.secondary)
             Spacer()
             if !model.pages.isEmpty {
-                Text("\(model.pages.count) \(model.pages.count == 1 ? "pagina" : "pagine")")
+                Text(localizedFormat(model.pages.count == 1 ? "%lld pagina" : "%lld pagine", model.pages.count))
                     .font(.callout)
                     .foregroundStyle(.secondary)
             }
@@ -175,27 +196,27 @@ struct CenterView: View {
     }
 
     private var statusText: String {
-        if scanner.scanners.isEmpty { return "Nessuno scanner rilevato" }
+        if scanner.scanners.isEmpty { return localized("Nessuno scanner rilevato") }
         switch scanner.phase {
-        case .idle: return "Scanner non connesso"
-        case .opening: return "Connessione allo scanner…"
-        case .configuring: return "Configurazione della sorgente…"
+        case .idle: return localized("Scanner non connesso")
+        case .opening: return localized("Connessione allo scanner…")
+        case .configuring: return localized("Configurazione della sorgente…")
         case .ready:
             if model.settings.documentType == .idCard {
                 return model.idFront == nil
-                    ? "Pronto — appoggia il FRONTE del documento e premi Scansiona"
-                    : "Fronte acquisito — gira il documento, appoggia il RETRO e premi Scansiona"
+                    ? localized("Pronto — appoggia il FRONTE del documento e premi Scansiona")
+                    : localized("Fronte acquisito — gira il documento, appoggia il RETRO e premi Scansiona")
             }
             return model.settings.source == .documentFeeder
-                ? "Pronto — inserisci i fogli nell'alimentatore e premi Scansiona"
+                ? localized("Pronto — inserisci i fogli nell'alimentatore e premi Scansiona")
                 : (scanner.overviewImage == nil
-                   ? "Pronto — premi Anteprima per vedere il piano, oppure Scansiona"
-                   : "Pronto — regola l'area e premi Scansiona")
-        case .overview: return "Anteprima in corso…"
+                   ? localized("Pronto — premi Anteprima per vedere il piano, oppure Scansiona")
+                   : localized("Pronto — regola l'area e premi Scansiona"))
+        case .overview: return localized("Anteprima in corso…")
         case .scanning:
             return scanner.pagesInCurrentJob > 0
-                ? "Scansione in corso… pagine ricevute: \(scanner.pagesInCurrentJob)"
-                : "Scansione in corso…"
+                ? localizedFormat("Scansione in corso… pagine ricevute: %lld", scanner.pagesInCurrentJob)
+                : localized("Scansione in corso…")
         }
     }
 }
@@ -207,9 +228,9 @@ struct IDWizardBar: View {
 
     var body: some View {
         HStack(spacing: 14) {
-            step(1, "Fronte", done: model.idFront != nil, active: model.idFront == nil)
+            step(1, localized("Fronte"), done: model.idFront != nil, active: model.idFront == nil)
             Image(systemName: "chevron.right").foregroundStyle(.tertiary)
-            step(2, "Retro", done: false, active: model.idFront != nil)
+            step(2, localized("Retro"), done: false, active: model.idFront != nil)
             if let front = model.idFront {
                 Image(decorative: ImageUtilities.downscale(front, maxSide: 120), scale: 1)
                     .resizable()
@@ -220,7 +241,7 @@ struct IDWizardBar: View {
             }
             Spacer()
             if model.idFront != nil {
-                Button("Ricomincia") { model.resetIDWizard() }
+                Button(localized("Ricomincia")) { model.resetIDWizard() }
                     .buttonStyle(.borderless)
             }
         }
@@ -249,6 +270,7 @@ struct ScanAreaView: View {
 
     private var contentSize: CGSize {
         if isFeeder, let page = model.settings.feederSize.inches { return page }
+        if scanner.phase == .scanning, let image = scanner.lastScannedPreview { return CGSize(width: image.width, height: image.height) }
         if let ov = scanner.overviewImage { return CGSize(width: ov.width, height: ov.height) }
         let phys = scanner.physicalSize
         return phys.width > 0 && phys.height > 0 ? phys : CGSize(width: 8.27, height: 11.69)
@@ -260,7 +282,9 @@ struct ScanAreaView: View {
                                    in: CGRect(origin: .zero, size: geo.size).insetBy(dx: 28, dy: 28))
             ZStack(alignment: .topLeading) {
                 Group {
-                    if !isFeeder, let overview = scanner.overviewImage {
+                    if scanner.phase == .scanning, let image = scanner.lastScannedPreview {
+                        ProcessedImageView(source: image, adjustments: model.defaultAdjustments, mode: model.settings.mode)
+                    } else if !isFeeder, let overview = scanner.overviewImage {
                         ProcessedImageView(source: overview,
                                            adjustments: model.defaultAdjustments,
                                            mode: model.settings.mode)
@@ -273,14 +297,41 @@ struct ScanAreaView: View {
                 .shadow(color: .black.opacity(0.25), radius: 6, y: 2)
                 .position(x: frame.midX, y: frame.midY)
 
-                if !isFeeder {
+                if !isFeeder && !scanner.isBusy {
                     SelectionOverlay(selection: $model.settings.selection,
                                      imageFrame: frame,
                                      physicalSize: scanner.physicalSize,
                                      enabled: !scanner.isBusy)
                 }
             }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .overlay {
+                if scanner.isBusy { scanningIndicator }
+            }
         }
+    }
+
+    private var scanningIndicator: some View {
+        VStack(spacing: 10) {
+            if let progress = scanner.scanProgress, scanner.phase == .scanning {
+                ProgressView(value: progress).frame(width: 190)
+                Text(progress, format: .percent.precision(.fractionLength(0))).monospacedDigit()
+                    .font(.subheadline.weight(.semibold))
+            } else {
+                ProgressView().controlSize(.large)
+            }
+            Text(scanner.phase == .overview ? localized("Acquisizione anteprima…") : localized("Scansione in corso…"))
+                .font(.headline)
+            if scanner.phase == .scanning {
+                Text(scanner.pagesInCurrentJob == 0 ? localized("L’immagine sarà visibile quando la pagina sarà ricevuta.") : localizedFormat("Pagine ricevute: %lld", scanner.pagesInCurrentJob))
+                    .font(.caption).foregroundStyle(.secondary)
+            }
+        }
+        .padding(20)
+        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 16))
+        .shadow(color: .black.opacity(0.18), radius: 12, y: 5)
+        .accessibilityElement(children: .combine)
+        .allowsHitTesting(false)
     }
 
     private var placeholder: some View {
@@ -288,12 +339,12 @@ struct ScanAreaView: View {
             Image(systemName: isFeeder ? "tray.and.arrow.down" : "doc.viewfinder")
                 .font(.system(size: 42, weight: .light))
                 .foregroundStyle(.tertiary)
-            Text(isFeeder ? "Alimentatore automatico" : "Nessuna anteprima")
+            Text(scanner.isBusy ? localized("Acquisizione in corso") : (isFeeder ? localized("Alimentatore automatico") : localized("Nessuna anteprima")))
                 .font(.title3)
                 .foregroundStyle(.secondary)
-            Text(isFeeder
-                 ? "Inserisci i fogli e premi Scansiona: ogni foglio diventa una pagina."
-                 : "Premi Anteprima per vedere il contenuto del piano.\nPuoi già trascinare per selezionare l'area.")
+            Text(scanner.isBusy ? localized("Attendi la risposta dello scanner.") : (isFeeder
+                 ? localized("Inserisci i fogli e premi Scansiona: ogni foglio diventa una pagina.")
+                 : localized("Premi Anteprima per vedere il contenuto del piano.\nPuoi già trascinare per selezionare l'area.")))
                 .font(.callout)
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)

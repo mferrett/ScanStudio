@@ -16,7 +16,7 @@ struct PresetsDialog: View {
             Divider()
             HStack {
                 Spacer()
-                Button("Fine") { dismiss() }
+                Button(localized("Fine")) { dismiss() }
                     .keyboardShortcut(.defaultAction)
             }
             .padding(12)
@@ -46,27 +46,27 @@ struct PresetsDialog: View {
     private var detail: some View {
         if let index = model.presets.firstIndex(where: { $0.id == selection }) {
             Form {
-                TextField("Nome", text: $model.presets[index].name)
-                LabeledContent("Cartella") {
+                TextField(localized("Nome"), text: $model.presets[index].name)
+                LabeledContent(localized("Cartella")) {
                     HStack {
                         Text(model.presets[index].folderPath)
                             .lineLimit(1)
                             .truncationMode(.middle)
                             .foregroundStyle(model.presets[index].folderExists ? Color.primary : Color.red)
                         Spacer()
-                        Button("Scegli…") { chooseFolder(for: index) }
+                        Button(localized("Scegli…")) { chooseFolder(for: index) }
                     }
                 }
-                TextField("Modello nome file", text: $model.presets[index].fileNamePattern)
-                Text("Segnaposto: {tipo} (ricevuta, fattura…), {attività} (esercente riconosciuto), {data} (ggMMaaaa). Esempio: ricevuta Bar Roma - 11102026")
+                TextField(localized("Modello nome file"), text: $model.presets[index].fileNamePattern)
+                Text(localized("Segnaposto: {tipo} (ricevuta, fattura…), {attività} (esercente riconosciuto), {data} (ggMMaaaa). Esempio: ricevuta Bar Roma - 11102026"))
                     .font(.caption)
                     .foregroundStyle(.secondary)
                 HStack {
-                    Button("Modello predefinito") {
+                    Button(localized("Modello predefinito")) {
                         model.presets[index].fileNamePattern = DestinationPreset.defaultPattern
                     }
                     Spacer()
-                    Button("Usa questa") {
+                    Button(localized("Usa questa")) {
                         model.selectedPresetID = model.presets[index].id
                         dismiss()
                     }
@@ -75,9 +75,9 @@ struct PresetsDialog: View {
             .formStyle(.grouped)
             .onChange(of: model.presets[index].fileNamePattern) { _, _ in model.refreshFileName() }
         } else {
-            ContentUnavailableView("Nessuna destinazione",
+            ContentUnavailableView(localized("Nessuna destinazione"),
                                    systemImage: "folder.badge.plus",
-                                   description: Text("Premi + per aggiungere una cartella, ad esempio “Ricevute rimborsi”."))
+                                   description: Text(localized("Premi + per aggiungere una cartella, ad esempio “Ricevute rimborsi”.")))
         }
     }
 
@@ -105,7 +105,7 @@ struct PresetsDialog: View {
         panel.canChooseDirectories = true
         panel.canChooseFiles = false
         panel.canCreateDirectories = true
-        panel.prompt = "Scegli"
+        panel.prompt = localized("Scegli")
         panel.directoryURL = start
         return panel.runModal() == .OK ? panel.url : nil
     }

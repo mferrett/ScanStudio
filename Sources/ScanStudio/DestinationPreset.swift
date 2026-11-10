@@ -8,7 +8,7 @@ struct DestinationPreset: Identifiable, Codable, Hashable {
     /// Segnaposto: {tipo} {attività} {data}
     var fileNamePattern: String = DestinationPreset.defaultPattern
 
-    static let defaultPattern = "{tipo} {attività} - {data}"
+    static let defaultPattern = "{data} {tipo} {attività}"
 
     var folderURL: URL { URL(fileURLWithPath: folderPath, isDirectory: true) }
     var folderExists: Bool {
@@ -21,7 +21,7 @@ enum FileNameBuilder {
     private static let dateFormatter: DateFormatter = {
         let f = DateFormatter()
         f.locale = Locale(identifier: "it_IT")
-        f.dateFormat = "ddMMyyyy"
+        f.dateFormat = "yyyy-MM-dd"
         return f
     }()
 

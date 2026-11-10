@@ -14,11 +14,13 @@ rm -rf "$APP"
 mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources"
 cp "$BIN_DIR/ScanStudio" "$APP/Contents/MacOS/ScanStudio"
 cp Resources/Info.plist "$APP/Contents/Info.plist"
+cp -R Sources/ScanStudio/Resources/*.lproj "$APP/Contents/Resources/"
+cp -R "$BIN_DIR/ScanStudio_ScanStudio.bundle" "$APP/Contents/Resources/"
 
 echo "▸ Compilazione degli asset (icona)…"
-xcrun actool Resources/Assets.xcassets \
+xcrun actool Resources/AppIcon.icon Resources/Assets.xcassets \
     --compile "$APP/Contents/Resources" \
-    --platform macosx --minimum-deployment-target 14.0 \
+    --platform macosx --minimum-deployment-target 26.0 \
     --app-icon AppIcon --accent-color AccentColor \
     --output-partial-info-plist /dev/null >/dev/null
 

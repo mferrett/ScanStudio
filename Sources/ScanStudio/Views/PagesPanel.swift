@@ -8,7 +8,7 @@ struct PagesPanel: View {
     var body: some View {
         VStack(spacing: 0) {
             HStack {
-                Text("Pagine").font(.headline)
+                Text(localized("Pagine")).font(.headline)
                 Spacer()
                 Text("\(model.pages.count)").foregroundStyle(.secondary).monospacedDigit()
             }
@@ -18,11 +18,11 @@ struct PagesPanel: View {
             Divider()
 
             if model.pages.isEmpty {
-                ContentUnavailableView("Nessuna pagina",
+                ContentUnavailableView(localized("Nessuna pagina"),
                                        systemImage: "doc.on.doc",
-                                       description: Text("Le pagine scansionate o importate appariranno qui."))
+                                       description: Text(localized("Le pagine scansionate o importate appariranno qui.")))
             } else {
-                List(selection: $model.selectedPageID) {
+                List(selection: Binding(get: { model.selectedPageID }, set: { model.selectPageForViewing($0) })) {
                     ForEach(Array(model.pages.enumerated()), id: \.element.id) { index, page in
                         PageRow(page: page, number: index + 1)
                             .tag(page.id)
@@ -40,9 +40,9 @@ struct PagesPanel: View {
 
             HStack {
                 Button {
-                    model.selectedPageID = nil
+                    model.selectPageForViewing(nil)
                 } label: {
-                    Label("Area di scansione", systemImage: "viewfinder")
+                    Label(localized("Area di scansione"), systemImage: "viewfinder")
                 }
                 .buttonStyle(.borderless)
                 .disabled(model.selectedPageID == nil)
@@ -55,30 +55,30 @@ struct PagesPanel: View {
                     Image(systemName: "trash")
                 }
                 .buttonStyle(.borderless)
-                .help("Elimina tutte le pagine")
+                .help(localized("Elimina tutte le pagine"))
                 .disabled(model.pages.isEmpty)
             }
             .padding(.horizontal, 12)
             .padding(.vertical, 8)
         }
-        .confirmationDialog("Eliminare tutte le pagine?", isPresented: $confirmDeleteAll) {
-            Button("Elimina tutte", role: .destructive) { model.deleteAll() }
+        .confirmationDialog(localized("Eliminare tutte le pagine?"), isPresented: $confirmDeleteAll) {
+            Button(localized("Elimina tutte"), role: .destructive) { model.deleteAll() }
         } message: {
-            Text("L'operazione non può essere annullata.")
+            Text(localized("L'operazione non può essere annullata."))
         }
     }
 
     @ViewBuilder
     private func contextMenu(for page: ScannedPage, index: Int) -> some View {
-        Button("Ruota a sinistra") { model.rotate(page.id, by: -1) }
-        Button("Ruota a destra") { model.rotate(page.id, by: 1) }
+        Button(localized("Ruota a sinistra")) { model.rotate(page.id, by: -1) }
+        Button(localized("Ruota a destra")) { model.rotate(page.id, by: 1) }
         Divider()
-        Button("Sposta su") { model.movePage(page.id, by: -1) }
+        Button(localized("Sposta su")) { model.movePage(page.id, by: -1) }
             .disabled(index == 0)
-        Button("Sposta giù") { model.movePage(page.id, by: 1) }
+        Button(localized("Sposta giù")) { model.movePage(page.id, by: 1) }
             .disabled(index == model.pages.count - 1)
         Divider()
-        Button("Elimina", role: .destructive) { model.deletePages([page.id]) }
+        Button(localized("Elimina"), role: .destructive) { model.deletePages([page.id]) }
     }
 }
 
@@ -95,7 +95,7 @@ private struct PageRow: View {
                 .frame(width: 52, height: 68)
                 .shadow(color: .black.opacity(0.2), radius: 1.5, y: 1)
             VStack(alignment: .leading, spacing: 2) {
-                Text("Pagina \(number)")
+                Text(localizedFormat("Pagina %lld", number))
                 Text("\(Int(page.dpi)) dpi · \(page.mode.label)")
                     .font(.caption)
                     .foregroundStyle(.secondary)

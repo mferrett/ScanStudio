@@ -15,6 +15,10 @@ final class AppModel: ObservableObject {
     @Published var busyMessage: String?
     @Published var busyProgress: Double = 0
     @Published var isDetecting = false
+    @Published private(set) var previewInfo: DocumentInfo?
+    @Published private(set) var previewAnalysisRunning = false
+    @Published private(set) var previewAnalysisFailed = false
+    private var previewGeneration = UUID()
 
     /// Wizard documento di identità: fronte già acquisito, in attesa del retro
     @Published private(set) var idFront: CGImage?
@@ -32,22 +36,74 @@ final class AppModel: ObservableObject {
     }
     @Published private(set) var fileName = ""
     private var fileNameEdited = false
+    private var fileNameEditVersion = 0
+    private var previewRequestedEditVersion: Int?
+    @Published private var previewNamingActive = false
+    @Published private var previewKindOverride: DocumentKind?
     private var persistenceSubscriptions: [AnyCancellable] = []
-    private var recognized: [UUID: DocumentInfo] = [:]
+    struct RecognitionKey: Hashable {
+        let id: UUID
+        let adjustments: Adjustments
+        let mode: ColorMode
+        let turns: Int
+        init(_ page: ScannedPage) { id = page.id; adjustments = page.adjustments; mode = page.mode; turns = page.quarterTurns }
+    }
+    @Published private var recognized: [RecognitionKey: DocumentInfo] = [:]
+    @Published private var recognizing: Set<RecognitionKey> = []
+    @Published private var recognitionFailures: Set<RecognitionKey> = []
+    @Published private var kindOverrides: [UUID: DocumentKind] = [:]
+    var recognitionKey: RecognitionKey? { recognitionPage.map(RecognitionKey.init) }
+    var canChooseDocumentKind: Bool { previewNamingActive || recognitionPage != nil }
+    var recognizedKind: DocumentKind? {
+        if previewNamingActive { return previewInfo?.kind }
+        guard let page = recognitionPage else { return nil }
+        if settings.documentType == .idCard { return .idCard }
+        return recognized[RecognitionKey(page)]?.kind
+    }
+    var selectedKindOverride: DocumentKind? {
+        get { previewNamingActive ? previewKindOverride : recognitionPage.flatMap { kindOverrides[$0.id] } }
+        set {
+            if previewNamingActive { previewKindOverride = newValue }
+            else {
+                guard let page = recognitionPage else { return }
+                kindOverrides[page.id] = newValue
+            }
+            refreshFileName()
+        }
+    }
+    var recognitionStatus: String {
+        if previewNamingActive { return previewRecognitionStatus ?? localized("In attesa dell’anteprima") }
+        guard let key = recognitionKey else { return localized("Nessuna pagina da analizzare") }
+        if settings.documentType == .idCard { return localized("Tipo impostato dalla scansione documento d’identità") }
+        if recognizing.contains(key) {
+            if let kind = recognized[key]?.kind, kind != .unknown { return localizedFormat("Suggerimento automatico: %@", kind.fileLabel) }
+            return recognized[key] == nil ? localized("Lettura del documento…") : localized("Tipo non ancora riconosciuto · analisi approfondita…")
+        }
+        if recognitionFailures.contains(key) { return localized("Riconoscimento non riuscito: scegli il tipo manualmente") }
+        guard let kind = recognized[key]?.kind else { return localized("Analisi in preparazione…") }
+        return kind == .unknown ? localized("Tipo non riconosciuto: puoi selezionarlo") : localizedFormat("Suggerimento automatico: %@", kind.fileLabel)
+    }
 
     private static let presetsKey = "destinationPresets"
     private static let selectedPresetKey = "selectedDestinationPreset"
 
-    let scanner = ScannerManager()
+    let scanner: ScannerManager
     private var modeForCurrentScan: ColorMode = .color
+    private var multiCropForCurrentScan = false
+    @Published private(set) var multiCropOriginal: CGImage?
+    @Published private(set) var multiCropPageIDs: [UUID] = []
+    private var multiCropOriginalDPI: Double = 300
+    private var multiCropOriginalMode: ColorMode = .color
+    private var multiCropOriginalAdjustments = Adjustments()
 
-    init() {
-        loadPersistedSettings()
-        if let data = UserDefaults.standard.data(forKey: Self.presetsKey),
+    init(scanner: ScannerManager = ScannerManager(), persistSettings: Bool = true) {
+        self.scanner = scanner
+        if persistSettings { loadPersistedSettings() }
+        if persistSettings, let data = UserDefaults.standard.data(forKey: Self.presetsKey),
            let saved = try? JSONDecoder().decode([DestinationPreset].self, from: data) {
             presets = saved
         }
-        if let raw = UserDefaults.standard.string(forKey: Self.selectedPresetKey),
+        if persistSettings, let raw = UserDefaults.standard.string(forKey: Self.selectedPresetKey),
            let id = UUID(uuidString: raw), presets.contains(where: { $0.id == id }) {
             selectedPresetID = id
         }
@@ -57,9 +113,16 @@ final class AppModel: ObservableObject {
                 self.handleIDCardScan(image, dpi: dpi)
                 return
             }
-            self.addPage(image, dpi: dpi, mode: self.modeForCurrentScan, adjustments: self.defaultAdjustments)
+            if self.multiCropForCurrentScan {
+                self.processMultiCrop(image, dpi: dpi)
+            } else {
+                self.addPage(image, dpi: dpi, mode: self.modeForCurrentScan, adjustments: self.defaultAdjustments)
+                self.selectedPageID = self.pages.last?.id
+            }
         }
-        persistenceSubscriptions = startPersistingSettings()
+        scanner.onOverviewCompleted = { [weak self] image in self?.analyzeOverview(image) }
+        scanner.onOverviewCleared = { [weak self] in self?.clearOverviewAnalysis() }
+        if persistSettings { persistenceSubscriptions = startPersistingSettings() }
     }
 
     // MARK: - Pagina selezionata
@@ -94,13 +157,122 @@ final class AppModel: ObservableObject {
     // MARK: - Scansione
 
     func preview() {
+        clearOverviewAnalysis()
+        previewNamingActive = true
+        previewRequestedEditVersion = fileNameEditVersion
         selectedPageID = nil
         scanner.requestOverview(settings: settings)
     }
 
+    private func clearOverviewAnalysis() {
+        previewGeneration = UUID()
+        previewNamingActive = false
+        previewKindOverride = nil
+        previewInfo = nil
+        previewAnalysisRunning = false
+        previewAnalysisFailed = false
+    }
+
+    /// Analyses the full overview without replacing or persisting the scanned pages.
+    func analyzeOverview(_ image: CGImage) {
+        let generation = UUID()
+        previewGeneration = generation
+        previewNamingActive = true
+        previewKindOverride = nil
+        if previewRequestedEditVersion == fileNameEditVersion { fileNameEdited = false }
+        previewRequestedEditVersion = nil
+        previewInfo = nil
+        previewAnalysisFailed = false
+        previewAnalysisRunning = true
+        Task.detached(priority: .userInitiated) { [weak self] in
+            do {
+                let ocr = try await DocumentOCR.recognize(image)
+                let initial = DocumentRecognizer.analyzeQuick(ocr)
+                await MainActor.run {
+                    guard let self, self.previewGeneration == generation else { return }
+                    self.previewInfo = initial
+                    if self.previewNamingActive { self.refreshFileName() }
+                }
+                let refined = await DocumentRecognizer.refine(ocr, initial: initial)
+                await MainActor.run {
+                    guard let self, self.previewGeneration == generation else { return }
+                    self.previewInfo = refined
+                    self.previewAnalysisRunning = false
+                    if self.previewNamingActive { self.refreshFileName() }
+                }
+            } catch {
+                await MainActor.run {
+                    guard let self, self.previewGeneration == generation else { return }
+                    self.previewAnalysisRunning = false
+                    self.previewAnalysisFailed = true
+                }
+            }
+        }
+    }
+
+    var previewRecognitionStatus: String? {
+        if previewAnalysisFailed { return localized("Analisi dell’anteprima non riuscita") }
+        guard let info = previewInfo else { return previewAnalysisRunning ? localized("Lettura dell’anteprima…") : nil }
+        if info.kind == .unknown {
+            return previewAnalysisRunning ? localized("Tipo non ancora riconosciuto · analisi approfondita…") : localized("Tipo non riconosciuto nell’anteprima")
+        }
+        return localizedFormat("Anteprima: %@", info.kind.displayName)
+    }
+
     func scan() {
+        guard busyMessage == nil else { return }
         modeForCurrentScan = settings.mode
-        scanner.scan(settings: settings)
+        multiCropForCurrentScan = settings.multiCrop && settings.source == .flatbed && settings.documentType == .standard
+        if !multiCropForCurrentScan {
+            if exportOptions.scope == .multiCrop { exportOptions.scope = .all }
+        }
+        var scanSettings = settings
+        if multiCropForCurrentScan { scanSettings.selection = CGRect(x: 0, y: 0, width: 1, height: 1) }
+        scanner.scan(settings: scanSettings)
+    }
+
+    func processMultiCrop(_ image: CGImage, dpi: Double) {
+        let mode = modeForCurrentScan
+        let adjustments = defaultAdjustments
+        multiCropOriginal = image
+        multiCropOriginalDPI = dpi
+        multiCropOriginalMode = mode
+        multiCropOriginalAdjustments = adjustments
+        busyMessage = localized("Rilevamento degli elementi…")
+        busyProgress = 0
+        Task.detached(priority: .userInitiated) { [weak self] in
+            let parts = ImageUtilities.splitDocuments(image)
+            await MainActor.run {
+                guard let self else { return }
+                self.busyMessage = nil
+                guard !parts.isEmpty else {
+                    self.multiCropPageIDs = []
+                    if self.exportOptions.scope == .multiCrop { self.exportOptions.scope = .all }
+                    self.multiCropOriginal = nil
+                    self.addPage(image, dpi: dpi, mode: mode, adjustments: adjustments)
+                    self.selectedPageID = self.pages.last?.id
+                    self.alertMessage = localized("Nessun elemento rettangolare rilevato. È stata conservata la scansione completa.")
+                    return
+                }
+                var newIDs: [UUID] = []
+                for part in parts {
+                    self.addPage(part, dpi: dpi, mode: mode, adjustments: adjustments)
+                    if let id = self.pages.last?.id { newIDs.append(id) }
+                }
+                self.multiCropPageIDs = newIDs
+                self.selectedPageID = self.pages.last?.id
+                self.exportOptions.format = self.exportOptions.format.singlePageVariant
+                self.exportOptions.scope = .multiCrop
+                self.alertMessage = localizedFormat("Rilevati %lld elementi. Verifica i ritagli prima di salvarli. La scansione completa resta disponibile.", parts.count)
+            }
+        }
+    }
+
+    func addMultiCropOriginal() {
+        guard let image = multiCropOriginal else { return }
+        addPage(image, dpi: multiCropOriginalDPI, mode: multiCropOriginalMode, adjustments: multiCropOriginalAdjustments)
+        selectedPageID = pages.last?.id
+        multiCropOriginal = nil
     }
 
     func cancelScan() {
@@ -122,7 +294,7 @@ final class AppModel: ObservableObject {
                 if let rect {
                     self.settings.selection = rect
                 } else {
-                    self.alertMessage = "Nessun documento riconosciuto nell'anteprima. Seleziona l'area manualmente."
+                    self.alertMessage = localized("Nessun documento riconosciuto nell'anteprima. Seleziona l'area manualmente.")
                 }
             }
         }
@@ -138,50 +310,100 @@ final class AppModel: ObservableObject {
         presets.first { $0.id == selectedPresetID }
     }
 
+    var multiCropPages: [ScannedPage] { pages.filter { multiCropPageIDs.contains($0.id) } }
+
     /// Pagina da cui ricavare il tipo di documento e l'attività
     var recognitionPage: ScannedPage? {
-        exportOptions.scope == .selected ? selectedPage : pages.first
+        switch exportOptions.scope {
+        case .selected: return selectedPage
+        case .multiCrop: return multiCropPages.first
+        case .all: return pages.first
+        }
     }
 
     /// Modifica manuale del nome: da qui in poi il suggerimento non lo sovrascrive più
     func setFileName(_ name: String) {
+        fileNameEditVersion += 1
         fileName = name
         fileNameEdited = !name.isEmpty
         if name.isEmpty { refreshFileName() }
     }
 
-    func restoreSuggestedFileName() {
-        fileNameEdited = false
-        refreshFileName()
-    }
-
     func analyzeCurrentPage() {
         guard let page = recognitionPage else {
-            if !fileNameEdited { fileName = "" }
+            if !previewNamingActive && !fileNameEdited { fileName = "" }
             return
         }
-        if recognized[page.id] != nil || settings.documentType == .idCard {
+        let key = RecognitionKey(page)
+        if recognized[key] != nil || settings.documentType == .idCard {
             refreshFileName()
             return
         }
-        let id = page.id, image = page.preview
+        guard recognizing.insert(key).inserted else { return }
+        recognitionFailures.remove(key)
         Task.detached(priority: .utility) { [weak self] in
-            let info = DocumentRecognizer.analyze(image)
-            await MainActor.run {
-                guard let self else { return }
-                self.recognized[id] = info
-                if self.recognitionPage?.id == id { self.refreshFileName() }
+            do {
+                let result = try await DocumentOCRCache.shared.recognize(page)
+                let initial = DocumentRecognizer.analyzeQuick(result)
+                await MainActor.run {
+                    guard let self, let current = self.pages.first(where: { $0.id == key.id }), RecognitionKey(current) == key else { return }
+                    self.recognized = self.recognized.filter { $0.key.id != key.id }
+                    self.recognized[key] = initial
+                    if self.recognitionKey == key { self.refreshFileName() }
+                }
+                let info = await DocumentRecognizer.refine(result, initial: initial)
+                await MainActor.run {
+                    guard let self else { return }
+                    self.recognizing.remove(key)
+                    guard let current = self.pages.first(where: { $0.id == key.id }), RecognitionKey(current) == key else { return }
+                    self.recognized[key] = info
+                    if self.recognitionKey == key { self.refreshFileName() }
+                }
+                let enriched = await DocumentRecognizer.enrich(result, initial: info)
+                await MainActor.run {
+                    guard let self, let current = self.pages.first(where: { $0.id == key.id }), RecognitionKey(current) == key else { return }
+                    self.recognized[key] = enriched
+                    if self.recognitionKey == key { self.refreshFileName() }
+                }
+            } catch {
+                await MainActor.run {
+                    guard let self else { return }
+                    self.recognizing.remove(key)
+                    self.recognitionFailures.insert(key)
+                }
             }
         }
     }
 
     func refreshFileName() {
         guard !fileNameEdited else { return }
-        guard let page = recognitionPage else { fileName = ""; return }
-        var info = recognized[page.id] ?? DocumentInfo()
-        if settings.documentType == .idCard { info = DocumentInfo(kind: .idCard, business: nil) }
+        var info: DocumentInfo
+        if previewNamingActive {
+            guard let previewInfo else { return }
+            info = previewInfo
+            if settings.documentType == .idCard { info = DocumentInfo(kind: .idCard, business: nil) }
+            if let override = previewKindOverride {
+                if override != info.kind { info.business = nil }
+                info.kind = override
+            }
+        } else {
+            guard let page = recognitionPage else { fileName = ""; return }
+            info = recognized[RecognitionKey(page)] ?? DocumentInfo()
+            if settings.documentType == .idCard { info = DocumentInfo(kind: .idCard, business: nil) }
+            if let override = kindOverrides[page.id] {
+                if override != info.kind { info.business = nil }
+                info.kind = override
+            }
+        }
         fileName = FileNameBuilder.build(pattern: selectedPreset?.fileNamePattern ?? DestinationPreset.defaultPattern,
-                                         kind: info.kind.fileLabel, business: info.business)
+                                         kind: info.kind.fileLabel, business: info.business, date: info.date ?? Date())
+    }
+
+    /// A deliberate page selection uses that page's metadata instead of the last overview.
+    func selectPageForViewing(_ id: UUID?) {
+        previewNamingActive = id == nil && previewInfo != nil
+        selectedPageID = id
+        refreshFileName()
     }
 
     /// URL libero nella cartella (aggiunge " 2", " 3"… se il file esiste già)
@@ -213,7 +435,7 @@ final class AppModel: ObservableObject {
         let mode = modeForCurrentScan
         let adjustments = defaultAdjustments
         idFront = nil
-        busyMessage = "Composizione del documento…"
+        busyMessage = localized("Composizione del documento…")
         busyProgress = 0
         Task.detached(priority: .userInitiated) { [weak self] in
             let composed = IDCardComposer.compose(front: front, frontDPI: frontDPI,
@@ -225,7 +447,7 @@ final class AppModel: ObservableObject {
                     self.addPage(composed, dpi: max(frontDPI, dpi), mode: mode, adjustments: adjustments)
                     self.selectedPageID = self.pages.last?.id
                 } else {
-                    self.alertMessage = "Impossibile comporre la pagina del documento."
+                    self.alertMessage = localized("Impossibile comporre la pagina del documento.")
                 }
             }
         }
@@ -245,18 +467,38 @@ final class AppModel: ObservableObject {
 
     func deletePages(_ ids: Set<UUID>) {
         pages.removeAll { ids.contains($0.id) }
+        multiCropPageIDs.removeAll { ids.contains($0) }
+        if multiCropPageIDs.isEmpty && exportOptions.scope == .multiCrop { exportOptions.scope = .all }
+        recognized = recognized.filter { !ids.contains($0.key.id) }
+        kindOverrides = kindOverrides.filter { !ids.contains($0.key) }
+        recognitionFailures = recognitionFailures.filter { !ids.contains($0.id) }
+        Task { await DocumentOCRCache.shared.remove(ids) }
         if let id = selectedPageID, ids.contains(id) { selectedPageID = nil }
     }
 
     func deleteSelected() {
         guard let id = selectedPageID, let index = selectedIndex else { return }
         pages.remove(at: index)
+        multiCropPageIDs.removeAll { $0 == id }
+        if multiCropPageIDs.isEmpty && exportOptions.scope == .multiCrop { exportOptions.scope = .all }
+        recognized = recognized.filter { $0.key.id != id }
+        kindOverrides.removeValue(forKey: id)
+        recognitionFailures = recognitionFailures.filter { $0.id != id }
+        Task { await DocumentOCRCache.shared.remove([id]) }
         selectedPageID = pages.indices.contains(index) ? pages[index].id : pages.last?.id
         if pages.isEmpty || selectedPageID == id { selectedPageID = nil }
     }
 
     func deleteAll() {
+        multiCropOriginal = nil
+        multiCropPageIDs = []
+        if exportOptions.scope == .multiCrop { exportOptions.scope = .all }
+        let ids = Set(pages.map(\.id))
         pages.removeAll()
+        recognized.removeAll()
+        kindOverrides.removeAll()
+        recognitionFailures.removeAll()
+        Task { await DocumentOCRCache.shared.remove(ids) }
         selectedPageID = nil
     }
 
@@ -295,7 +537,8 @@ final class AppModel: ObservableObject {
     // MARK: - Importazione
 
     func importFiles(_ urls: [URL]) {
-        busyMessage = "Importazione…"
+        previewNamingActive = false
+        busyMessage = localized("Importazione…")
         busyProgress = 0
         Task.detached(priority: .userInitiated) { [weak self] in
             var loaded: [ImageUtilities.LoadedImage] = []
@@ -314,7 +557,7 @@ final class AppModel: ObservableObject {
                     self.addPage(item.image, dpi: dpi, mode: .color, adjustments: Adjustments())
                 }
                 self.busyMessage = nil
-                if results.isEmpty { self.alertMessage = "Nessuna immagine importabile nei file selezionati." }
+                if results.isEmpty { self.alertMessage = localized("Nessuna immagine importabile nei file selezionati.") }
             }
         }
     }
@@ -325,15 +568,17 @@ final class AppModel: ObservableObject {
         let targets: [ScannedPage]
         if exportOptions.scope == .selected {
             guard let page = selectedPage else {
-                alertMessage = "Seleziona una pagina da salvare, oppure scegli “Tutte”."
+                alertMessage = localized("Seleziona una pagina da salvare, oppure scegli “Tutte”.")
                 return
             }
             targets = [page]
+        } else if exportOptions.scope == .multiCrop {
+            targets = multiCropPages
         } else {
             targets = pages
         }
         guard !targets.isEmpty else {
-            alertMessage = "Non ci sono pagine da salvare."
+            alertMessage = localized("Non ci sono pagine da salvare.")
             return
         }
 
@@ -344,35 +589,35 @@ final class AppModel: ObservableObject {
         if name.isEmpty {
             let formatter = DateFormatter()
             formatter.dateFormat = "yyyy-MM-dd HH.mm"
-            name = "Scansione \(formatter.string(from: Date()))"
+            name = localizedFormat("Scansione %@", formatter.string(from: Date()))
         }
 
         let url: URL
         if let preset = selectedPreset {
             guard preset.folderExists else {
-                alertMessage = "La cartella “\(preset.folderPath)” non esiste più. Modifica la destinazione “\(preset.name)”."
+                alertMessage = localizedFormat("La cartella “%@” non esiste più. Modifica la destinazione “%@”.", preset.folderPath, preset.name)
                 return
             }
             url = uniqueURL(in: preset.folderURL, name: name, ext: ext)
         } else {
             let panel = NSSavePanel()
-            panel.title = "Salva scansione"
+            panel.title = localized("Salva scansione")
             panel.allowedContentTypes = [options.format.utType]
             panel.canCreateDirectories = true
             panel.nameFieldStringValue = "\(name).\(ext)"
-            if !options.format.isMultiPage && targets.count > 1 {
-                panel.message = "Verrà creato un file per ogni pagina (nome-001, nome-002, …)."
+            if options.format.isSeparateDocument && targets.count > 1 {
+                panel.message = localized("Verrà creato un file per ogni pagina (nome-001, nome-002, …).")
             }
             guard panel.runModal() == .OK, let chosen = panel.url else { return }
             url = chosen
         }
 
-        busyMessage = "Salvataggio di \(targets.count) \(targets.count == 1 ? "pagina" : "pagine")…"
+        busyMessage = targets.count == 1 ? localized("Salvataggio di una pagina…") : localizedFormat("Salvataggio di %lld pagine…", targets.count)
         busyProgress = 0
 
         Task.detached(priority: .userInitiated) { [weak self] in
             do {
-                let written = try Exporter.export(pages: targets, options: options, to: url) { p in
+                let written = try await Exporter.export(pages: targets, options: options, to: url) { p in
                     Task { @MainActor in self?.busyProgress = p }
                 }
                 await MainActor.run {

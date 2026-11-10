@@ -1,229 +1,106 @@
-# ScanStudio
+<p align="center">
+  <img src="Resources/Assets.xcassets/AppIcon.appiconset/icon_256.png" alt="ScanStudio icon" width="128">
+</p>
 
-App nativa per macOS (Swift + SwiftUI) per acquisire documenti da scanner, anche multipagina,
-con anteprima, selezione dell'area, regolazioni dell'immagine e salvataggio in PDF, PNG, JPEG o TIFF.
-L'interfaccia è in italiano.
+<h1 align="center">ScanStudio</h1>
 
-Comunica con lo scanner tramite **ImageCaptureCore**, lo stesso framework usato da
-*Acquisizione Immagini* e *Anteprima*: funziona con qualunque scanner che macOS riconosce
-(USB, di rete/Bonjour, AirScan/eSCL, condiviso).
+<p align="center">
+  <img src="https://img.shields.io/badge/macOS-26%2B-000000?logo=apple&amp;logoColor=white" alt="macOS 26 or later">
+  <img src="https://img.shields.io/badge/Swift-SwiftUI-F05138?logo=swift&amp;logoColor=white" alt="Swift and SwiftUI">
+  <img src="https://img.shields.io/badge/OCR-Vision-007AFF" alt="OCR with Apple Vision">
+  <img src="https://img.shields.io/badge/Processing-on%20device-34A853" alt="On-device processing">
+</p>
 
-![ScanStudio: area di scansione con anteprima e selezione](docs/screenshots/main.png)
+ScanStudio is a native macOS app for scanning and importing documents. Preview the scanner bed, select an area, adjust images, organize pages and save them as searchable PDF, TIFF, PNG or JPEG.
 
-## Indice
+The app uses **ImageCaptureCore**, the framework behind Image Capture and Preview, and works with scanners recognized by macOS, including USB, network/Bonjour, AirScan/eSCL and shared devices. Document processing takes place on the Mac. The interface follows the system language and supports Italian, English, Spanish, French, German and Portuguese.
 
-- [Requisiti](#requisiti)
-- [Compilazione](#compilazione)
-- [Come si usa](#come-si-usa)
-- [Funzioni](#funzioni)
-- [Scorciatoie da tastiera](#scorciatoie-da-tastiera)
-- [Risoluzione dei problemi](#risoluzione-dei-problemi)
-- [Note tecniche](#note-tecniche)
-- [Struttura del progetto](#struttura-del-progetto)
+## Requirements
 
-## Requisiti
+- macOS 26 or later
+- Xcode 26 or later, or the corresponding Command Line Tools (`xcode-select --install`)
+- A scanner recognized by Image Capture, for scanning; existing images and PDFs can also be imported
 
-- macOS 14 Sonoma o successivo
-- Xcode 15 o successivo, oppure i soli Command Line Tools (`xcode-select --install`)
-- Uno scanner supportato da macOS (nessun driver aggiuntivo se funziona in *Acquisizione Immagini*)
+## Build and run
 
-## Compilazione
+Open `ScanStudio.xcodeproj` in Xcode, select the **ScanStudio** scheme and **My Mac**, then press ⌘R.
 
-**Con Xcode:** apri `ScanStudio.xcodeproj`, scegli lo schema *ScanStudio* → *My Mac* e premi ⌘R.
-
-**Da terminale** (crea `build/ScanStudio.app` con icona e firma ad-hoc):
+Alternatively, build an ad-hoc-signed app bundle from Terminal:
 
 ```bash
 ./build-app.sh
 open build/ScanStudio.app
 ```
 
-**Solo per sviluppo:** `swift build` e `swift run ScanStudio` usano `Package.swift`. In questo caso
-l'eseguibile parte senza bundle `.app`.
+For development, `swift build` and `swift run ScanStudio` use Swift Package Manager. The executable launched this way does not have an app bundle. If macOS blocks the ad-hoc-signed app on first launch, use Control-click → **Open**.
 
-> Primo avvio: essendo firmata ad-hoc, se macOS blocca l'app usa clic destro → *Apri*.
->
-> Se aggiungi o rimuovi file `.swift`, rigenera il progetto Xcode con `python3 generate-xcodeproj.py`.
-> Lo script sovrascrive le modifiche fatte a mano al progetto.
+## Getting started
 
-## Come si usa
+1. Turn on the scanner and wait for it to appear. If it remains disconnected, choose **Reconnect**.
+2. For a flatbed, choose **Preview** (⇧⌘P), then drag to select an area or use **Detect document**.
+3. Choose **Scan** (⌘R). Pages appear in the panel on the right. Alternatively, import existing images or PDFs with ⌘O.
+4. Select a page to rotate it, change its color mode or adjust its appearance. The sidebar contains **Scan** and **Adjustments** tabs.
+5. Choose a destination, filename and format, then **Save** (⌘S).
 
-1. **Scegli lo scanner.** All'avvio l'app lo cerca da sola. Quando lo stato diventa *Pronto*
-   (pallino verde) puoi scansionare. Se resta *Non connesso* usa il pulsante *Riconnetti*.
-2. **Anteprima (facoltativa).** Con il piano di scansione premi *Anteprima* (⇧⌘P), poi trascina per
-   selezionare l'area oppure premi *Rileva documento*.
-3. **Scansiona** (⌘R). Ogni scansione aggiunge una pagina all'elenco a destra. Con l'alimentatore
-   ogni foglio diventa una pagina.
-4. **Rivedi e correggi.** Clicca una pagina per vederla: puoi ruotarla, cambiare modalità colore
-   e regolare luminosità, contrasto e le altre impostazioni con anteprima dal vivo.
-5. **Salva** (⌘S). Scegli la destinazione e il nome del file (proposto in automatico) e il formato.
+## Features
 
-![Pagina selezionata con regolazioni e nome file proposto](docs/screenshots/detail.png)
+### Scanning and document types
 
-## Funzioni
+ScanStudio detects available scanners and reconnects when a device becomes available. Supported sources include flatbed, automatic document feeder (ADF), slides and negatives where provided by the scanner. Page size and duplex scanning depend on the device.
 
-### Scanner e sorgente
+The preview allows free selection and automatic document detection. During acquisition, the app displays an activity indicator and progress when the driver reports it. With file-based transfers, the image appears after the scanner sends the page.
 
-- Rilevamento automatico degli scanner locali e di rete, scelta del dispositivo
-- Riconnessione automatica se lo scanner viene acceso dopo l'app o va in standby
-- Sorgenti: piano, alimentatore automatico (ADF), diapositive/negativi se presenti
-- ADF: formato pagina (A4, A5, Letter, Legal, massimo) e fronte/retro se supportato
+The identity-document workflow scans the front and back and combines them on a single A4 page at their original size. Automatic cropping attempts to detect, straighten and orient each side. With duplex ADF, consecutive pages are used for the front and back.
 
-### Acquisizione
+**Multiple items (multi-crop)** scans the entire flatbed once, detects up to 16 rectangular items and corrects their perspective. Check the number and edges of the crops: low contrast, overlapping objects and irregular edges can prevent detection. The full scan remains available if detection fails, or can be added back using **Add full scan**. The latest crops are selected for export, with separate files for single-page PDF/TIFF and image formats.
 
-- Anteprima rapida del piano (⇧⌘P)
-- Selezione dell'area: trascina per creare, sposta trascinando dentro, ridimensiona da bordi e angoli;
-  etichetta con le dimensioni in cm
-- *Rileva documento*: individua automaticamente il foglio nell'anteprima (Vision)
-- Modalità: colore, scala di grigi, bianco e nero
-- Risoluzione: valori supportati dal driver, con stima dei pixel risultanti
+### Adjustments
 
-### Tipo di documento
+Changes are previewed per page or applied to new scans. Available controls include brightness, contrast, exposure, gamma, saturation, sharpness, noise reduction, black-and-white threshold, automatic enhancement and inversion. Double-click a slider label to reset it; **Apply to all** copies adjustments to every page.
 
-Il menu *Documento* nella sezione *Scansione* offre due modalità.
+Optional processing includes deskew, descreening, software dust reduction, color restoration and gutter-shadow correction. Dust reduction uses a median filter, not an infrared sensor or Digital ICE; descreening uses light blur. These filters can soften details, and gutter correction can lighten nearby text. Review the preview before saving. The original page image remains available while the page is in the project.
 
-- **Scansione classica:** ogni scansione è una pagina.
-- **Documento di identità:** una procedura guidata in due passi. Scansioni il **fronte**, poi giri
-  la carta e scansioni il **retro**. Le due facce vengono unite in **un'unica pagina A4**, una sopra
-  l'altra e senza sovrapposizioni, ciascuna a dimensioni reali. La barra *Fronte → Retro* sopra l'area
-  centrale mostra a che punto sei; *Ricomincia* scarta il fronte già acquisito.
-  Con l'alimentatore in fronte/retro le due pagine consecutive diventano fronte e retro in automatico.
+### Document recognition and filenames
 
-![Procedura guidata per il documento di identità: fronte acquisito, in attesa del retro](docs/screenshots/wizard.png)
+Vision analyzes a completed scanner preview and shows an initial document-type suggestion. The full preview can include areas outside the selected scan region; acquired pages are analyzed separately.
 
-Con l'opzione **Ritaglia automaticamente** (attiva di default) ogni faccia viene:
+For filenames, the app extracts text locally and uses a conservative classification. When the type is uncertain and Apple Intelligence is available, Foundation Models may refine it in the background. The result is a suggestion and can be inaccurate. The issuer and date are extracted where possible; otherwise the current date is used. You can choose a document type and edit the filename. A name edited manually is preserved during the current analysis.
 
-- ritagliata sul bordo della carta;
-- **raddrizzata** se è appoggiata storta sul piano;
-- ruotata in orizzontale e **capovolta se è stata scansionata al contrario**. Il verso si ricava dalla
-  direzione di lettura del testo, con l'OCR di Vision.
+Destination presets store a folder and filename template. The default template is `{data} {tipo} {attività}` (date, type, issuer); these placeholder names remain unchanged across languages. Existing filenames receive a numbered suffix instead of being overwritten.
 
-![Fronte e retro uniti in un'unica pagina, entrambi dritti](docs/screenshots/idresult.png)
+### Export
 
-### Destinazioni e nome del file
+- **PDF (multipage)** and **PDF (single page)** include a searchable, selectable OCR text layer. Image appearance is unchanged. JPEG compression and quality are configurable.
+- **TIFF** supports multipage and single-page output; **PNG** and **JPEG** produce one file per page. Resolution is written to metadata. Black-and-white output uses 1-bit images where supported.
+- **Structured Markdown** is optional and disabled by default. When explicitly selected, a separate `.md` file is saved alongside the scan. Vision supplies recognized text and, where detected, headings, lists and tables. When available, the local Apple Intelligence model can suggest headings and list items without rewriting OCR text. Results depend on the source and structure recognition; without the model the output may remain largely plain text. Multipage documents produce one Markdown file with page sections; separate scan files receive separate Markdown files where applicable.
+- Export all pages, the selected page or the latest multi-crop results. Existing numbered files are not overwritten.
 
-- **Destinazioni predefinite:** cartelle salvate con un nome, ad esempio *Ricevute rimborsi EFIS* o
-  *Documenti personali*. Le scegli al volo dal menu *Destinazione* nella sezione *Salvataggio*; con una
-  destinazione scelta il file viene salvato direttamente, senza finestra di salvataggio. Con
-  *Chiedi ogni volta* compare il pannello di salvataggio classico.
-- Il pulsante accanto al menu apre la finestra di gestione: aggiungi, rinomina, cambia cartella,
-  elimina. Destinazioni e scelta restano salvate tra un avvio e l'altro.
-- **Nome file proposto**, modificabile, in base al documento riconosciuto. Il modello predefinito è
-  `{tipo} {attività} - {data}`, ad esempio `ricevuta Bar Roma - 14102026`. Ogni destinazione può avere il
-  proprio modello.
-- Se un file con lo stesso nome esiste già, viene aggiunto un numero (`… 2`, `… 3`).
+### Saved settings
 
+Scanner settings, default adjustments, destination presets and export options are restored on the next launch. The format defaults to multipage PDF at each launch. The selected scan area, acquired pages and filename are not persisted.
 
-### Riconoscimento del documento
+## Keyboard shortcuts
 
-Il nome del file si basa sul testo della prima pagina (o della pagina selezionata, se salvi solo quella),
-letto con l'OCR di **Vision** e analizzato con **NaturalLanguage**. Tutto avviene sul Mac, senza servizi esterni.
-
-- **Tipo** (`{tipo}`): ricevuta/scontrino, fattura, carta d'identità, passaporto, patente, tessera sanitaria;
-  altrimenti *documento*.
-- **Attività** (`{attività}`): l'esercente. È ricavato dall'intestazione, preferendo le righe più grandi e
-  quelle con una forma societaria (S.r.l., S.p.A., …), e scartando indirizzi, partita IVA, telefoni. I nomi
-  in maiuscolo diventano leggibili e le sigle societarie vengono tolte.
-- **Data** (`{data}`): la data di oggi nel formato `ggMMaaaa`.
-
-Il riconoscimento è un suggerimento: puoi sempre correggere il nome. Appena lo modifichi a mano non viene più
-sovrascritto; il pulsante a bacchetta lo ripropone.
-
-### Regolazioni
-
-In anteprima dal vivo, per la singola pagina o per le nuove scansioni:
-
-- Luminosità, contrasto, brillantezza (esposizione), toni medi (gamma), saturazione
-- Nitidezza, riduzione rumore, soglia bianco/nero
-- Miglioramento automatico, inversione (negativi)
-- Doppio clic sul nome di uno slider per ripristinarlo; *Applica a tutte* copia le regolazioni su ogni pagina
-
-### Pagine
-
-- Elenco con miniature, riordino trascinando, rotazione, eliminazione (anche con ⌫)
-- Cambio modalità colore per singola pagina
-- Importazione di immagini o PDF esistenti come pagine (⌘O)
-
-### Salvataggio
-
-- **PDF multipagina** con dimensioni fisiche corrette, compressione JPEG regolabile e, a scelta,
-  **testo ricercabile (OCR)** in italiano e inglese: il testo riconosciuto viene nascosto sopra l'immagine, così
-  il PDF resta identico ma si può cercare e copiare. Rallenta il salvataggio e aumenta un po' il peso del file.
-- **TIFF multipagina** (LZW)
-- **PNG / JPEG:** un file per pagina (`nome-001.png`, `nome-002.png`, …)
-- In modalità bianco e nero le pagine vengono salvate a 1 bit (file molto leggeri)
-- DPI scritti nei metadati
-- Puoi salvare tutte le pagine oppure solo quella selezionata
-
-### Impostazioni persistenti
-
-Le scelte dell'utente vengono salvate e ripristinate all'avvio successivo: tipo di documento, sorgente,
-modalità colore, risoluzione, formato pagina dell'alimentatore, fronte/retro, regolazioni predefinite,
-formato e opzioni di salvataggio, destinazioni. Il salvataggio avviene a ogni modifica e all'uscita.
-Non vengono ricordati l'area selezionata, le pagine acquisite e il nome del file.
-
-## Scorciatoie da tastiera
-
-| Azione | Scorciatoia |
+| Action | Shortcut |
 | --- | --- |
-| Anteprima | ⇧⌘P |
-| Scansiona | ⌘R |
-| Interrompi | ⌘. |
-| Importa immagini o PDF | ⌘O |
-| Salva | ⌘S |
-| Elimina la pagina selezionata | ⌫ |
+| Preview | ⇧⌘P |
+| Scan | ⌘R |
+| Stop | ⌘. |
+| Import images or PDF | ⌘O |
+| Save | ⌘S |
+| Delete selected page | ⌫ |
 
-## Risoluzione dei problemi
+## Troubleshooting
 
-**Lo stato resta "Non connesso".** Accendi lo scanner e controlla che sia visibile in *Acquisizione Immagini*.
-L'app riprova da sola; puoi forzare con *Riconnetti*.
+- **Scanner disconnected:** turn it on and check that it appears in Image Capture. ScanStudio retries automatically; use **Reconnect** to retry immediately.
+- **Cannot open session (−47):** the scanner may allow only one connection. Close other ScanStudio instances and scanning apps, then reconnect.
+- **Failed to open a connection (−21345):** restart the app; if the problem persists, power-cycle the scanner.
+- **Scan area is inverted:** some devices use a bottom-left origin. Set `scanAreaOriginIsTopLeft = false` in `ScannerManager.swift` if appropriate for your device.
+- **Identity document is upside down or tilted:** orientation relies on visible text; rotate the result manually if recognition is inconclusive. Turning off automatic cropping also disables deskew for the card.
+- **Icon does not update:** macOS caches app icons; restarting the app and refreshing the Dock/Finder cache can help.
 
-**Errore «Impossibile aprire la sessione» (codice −47).** Lo scanner accetta una sola connessione alla volta.
-Chiudi le altre copie di ScanStudio (anche quella lanciata da Xcode) e le altre app che lo usano
-(*Acquisizione Immagini*, *Anteprima*, VueScan, app del produttore), poi premi *Riconnetti*.
+## Technical notes
 
-**Errore «Failed to open a connection to the device» (codice −21345).** Di solito è un blocco momentaneo
-della ricerca dei dispositivi: riavvia l'app. Se persiste, spegni e riaccendi lo scanner.
+Image adjustments use Core Image because ImageCaptureCore does not expose hardware controls uniformly across scanners. Scanner transfers use temporary TIFF files. The project uses Swift 5 language mode and is not sandboxed. OCR and optional Foundation Models processing run locally. Vision OCR is currently configured for Italian and English; interface language does not change OCR recognition languages or guarantee document classification in other languages.
 
-**L'area acquisita risulta capovolta.** Con alcuni scanner l'origine dell'area è in basso: imposta
-`scanAreaOriginIsTopLeft = false` in `ScannerManager.swift`.
-
-**L'icona non si vede.** macOS tiene in cache le icone: esegui `killall Dock Finder` e riavvia l'app.
-
-**Il documento di identità esce capovolto o storto.** Il riconoscimento usa il testo della carta: con pochissimo
-testo mantiene l'orientamento di partenza. Ruota la pagina a mano dal pannello. Disattivando
-*Ritaglia automaticamente* la carta non viene né ritagliata né raddrizzata.
-
-## Note tecniche
-
-- Luminosità, contrasto e le altre regolazioni sono applicate in software (Core Image, su GPU):
-  ImageCaptureCore non espone in modo uniforme i controlli hardware dei vari scanner.
-  In compenso le modifiche sono immediate e non richiedono una nuova scansione.
-- Il trasferimento dallo scanner è file-based in TIFF, in una cartella temporanea.
-- L'app non usa la sandbox: non servono entitlement per ImageCaptureCore.
-- Il progetto usa Swift 5 language mode (`swiftLanguageVersions: [.v5]`).
-
-## Struttura del progetto
-
-```
-Sources/ScanStudio/
-  ScanStudioApp.swift        avvio dell'app e icona del Dock
-  ScannerManager.swift       scoperta scanner, riconnessione, anteprima, scansione (ImageCaptureCore)
-  AppModel.swift             stato: pagine, impostazioni, wizard documento, destinazioni, salvataggio
-  SettingsPersistence.swift  salvataggio e ripristino delle impostazioni
-  DestinationPreset.swift    destinazioni predefinite e costruzione del nome file
-  DocumentRecognizer.swift   tipo di documento ed esercente (Vision + NaturalLanguage)
-  IDCardComposer.swift       fronte/retro in un'unica pagina: ritaglio, raddrizzamento, orientamento
-  ImageProcessor.swift       pipeline delle regolazioni (Core Image)
-  ImageUtilities.swift       caricamento, conversioni, rilevamento documento
-  Exporter.swift             PDF (con OCR), TIFF, PNG, JPEG
-  Models.swift               tipi di dati
-  Views/                     interfaccia SwiftUI (sidebar, area centrale, pagine, dialog destinazioni)
-Resources/
-  Info.plist
-  Assets.xcassets            icona e colore d'accento
-icon-source/                 immagine originale dell'icona
-docs/screenshots/            schermate usate in questo file
-```
-
-Nelle schermate i dati (carta d'identità, ricevute, percorsi) sono di esempio.
+The source code is under `Sources/ScanStudio`: `ScannerManager` handles devices, `AppModel` manages state, `DocumentOCR` and `DocumentRecognizer` handle recognition, `ImageProcessor` applies adjustments, `Exporter` writes output, and `Views` contains the SwiftUI interface. Localizations are in `Sources/ScanStudio/Resources`. The older images in `docs/screenshots` show a previous interface.

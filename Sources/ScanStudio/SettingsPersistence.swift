@@ -17,7 +17,7 @@ struct PersistedSettings: Codable {
     var exportFormat: String
     var jpegQuality: Double
     var pdfUseJPEG: Bool
-    var ocr: Bool
+    var ocr: Bool? // Legacy preference; PDF OCR is always enabled.
     var exportScope: String
 }
 
@@ -35,11 +35,13 @@ extension AppModel {
         settings.feederSize = FeederPageSize(rawValue: saved.feederSize) ?? .a4
         settings.duplex = saved.duplex
         defaultAdjustments = saved.adjustments
-        exportOptions.format = ExportFormat(rawValue: saved.exportFormat) ?? .pdf
+        // Each launch starts with PDF multipagina, regardless of the previous export.
+        exportOptions.format = .pdf
         exportOptions.jpegQuality = saved.jpegQuality
         exportOptions.pdfUseJPEG = saved.pdfUseJPEG
-        exportOptions.ocr = saved.ocr
-        exportOptions.scope = ExportScope(rawValue: saved.exportScope) ?? .all
+        let restoredScope = ExportScope(rawValue: saved.exportScope) ?? .all
+        // Crop IDs are session-only and cannot be restored across launches.
+        exportOptions.scope = restoredScope == .multiCrop ? .all : restoredScope
     }
 
     func savePersistedSettings() {
@@ -55,7 +57,7 @@ extension AppModel {
             exportFormat: exportOptions.format.rawValue,
             jpegQuality: exportOptions.jpegQuality,
             pdfUseJPEG: exportOptions.pdfUseJPEG,
-            ocr: exportOptions.ocr,
+            ocr: true,
             exportScope: exportOptions.scope.rawValue)
         if let data = try? JSONEncoder().encode(snapshot) {
             UserDefaults.standard.set(data, forKey: Self.persistedSettingsKey)

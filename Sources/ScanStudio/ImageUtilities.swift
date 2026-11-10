@@ -3,6 +3,8 @@ import CoreGraphics
 import ImageIO
 import UniformTypeIdentifiers
 import Vision
+import CoreImage
+import CoreImage.CIFilterBuiltins
 
 enum ImageUtilities {
 
@@ -151,6 +153,79 @@ enum ImageUtilities {
     }
 
     // MARK: - Rilevamento documento
+
+    /// Detects up to 16 distinct rectangular items. Returned corners use Vision's
+    /// lower-left normalized coordinates so they map directly to Core Image.
+    static func detectedRectangles(in image: CGImage, maximum: Int = 16) -> [VNRectangleObservation] {
+        let request = VNDetectRectanglesRequest()
+        request.maximumObservations = maximum
+        request.minimumConfidence = 0.65
+        request.minimumSize = 0.08
+        request.minimumAspectRatio = 0.15
+        request.quadratureTolerance = 25
+        do { try VNImageRequestHandler(cgImage: image).perform([request]) }
+        catch { return [] }
+        let candidates = (request.results ?? []).sorted { $0.boundingBox.width * $0.boundingBox.height > $1.boundingBox.width * $1.boundingBox.height }
+        var result: [VNRectangleObservation] = []
+        for item in candidates {
+            let bounds = item.boundingBox
+            guard bounds.width * bounds.height < 0.97 else { continue }
+            let isDuplicate = result.contains { other in
+                let overlap = bounds.intersection(other.boundingBox)
+                guard !overlap.isNull else { return false }
+                let area = bounds.width * bounds.height
+                return area > 0 && overlap.width * overlap.height / area > 0.75
+            }
+            if !isDuplicate { result.append(item) }
+        }
+        return result.sorted {
+            if $0.boundingBox.midY == $1.boundingBox.midY { return $0.boundingBox.minX < $1.boundingBox.minX }
+            return $0.boundingBox.midY > $1.boundingBox.midY
+        }
+    }
+
+    static func perspectiveCorrect(_ image: CGImage, rectangle: VNRectangleObservation) -> CGImage? {
+        let width = CGFloat(image.width), height = CGFloat(image.height)
+        func point(_ p: CGPoint) -> CGPoint { CGPoint(x: p.x * width, y: p.y * height) }
+        let filter = CIFilter.perspectiveCorrection()
+        filter.inputImage = CIImage(cgImage: image)
+        filter.topLeft = point(rectangle.topLeft)
+        filter.topRight = point(rectangle.topRight)
+        filter.bottomLeft = point(rectangle.bottomLeft)
+        filter.bottomRight = point(rectangle.bottomRight)
+        guard let output = filter.outputImage, !output.extent.isEmpty, !output.extent.isInfinite else { return nil }
+        return ImageProcessor.context.createCGImage(output, from: output.extent)
+    }
+
+    static func deskew(_ image: CGImage) -> CGImage? {
+        if let rectangle = detectedRectangles(in: image, maximum: 1).first,
+           rectangle.boundingBox.width * rectangle.boundingBox.height >= 0.5 {
+            return perspectiveCorrect(image, rectangle: rectangle)
+        }
+        // If the paper fills the frame, estimate only small rotations from text baselines.
+        let request = VNRecognizeTextRequest()
+        request.recognitionLevel = .fast
+        request.usesLanguageCorrection = false
+        do { try VNImageRequestHandler(cgImage: image).perform([request]) } catch { return nil }
+        let width = CGFloat(image.width), height = CGFloat(image.height)
+        let angles = (request.results ?? []).compactMap { line -> CGFloat? in
+            let dx = (line.topRight.x - line.topLeft.x) * width
+            let dy = (line.topRight.y - line.topLeft.y) * height
+            guard dx > 20 else { return nil }
+            let angle = atan2(dy, dx)
+            return abs(angle) <= .pi / 12 ? angle : nil
+        }.sorted()
+        guard angles.count >= 3 else { return nil }
+        let angle = angles[angles.count / 2]
+        guard abs(angle) > .pi / 720 else { return nil }
+        let rotated = CIImage(cgImage: image).transformed(by: CGAffineTransform(rotationAngle: -angle))
+        let background = CIImage(color: .white).cropped(to: rotated.extent)
+        return ImageProcessor.context.createCGImage(rotated.composited(over: background), from: rotated.extent)
+    }
+
+    static func splitDocuments(_ image: CGImage) -> [CGImage] {
+        detectedRectangles(in: image).compactMap { perspectiveCorrect(image, rectangle: $0) }
+    }
 
     /// Restituisce il riquadro del documento sull'anteprima (normalizzato, origine in alto a sinistra)
     static func detectDocument(in image: CGImage) -> CGRect? {

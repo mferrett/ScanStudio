@@ -4,6 +4,13 @@ import ImageCaptureCore
 import UniformTypeIdentifiers
 import CoreGraphics
 
+enum ScannerProgress {
+    static func fraction(percent: Double, inProgress: Bool) -> Double? {
+        guard inProgress, percent.isFinite, percent > 0, percent <= 100 else { return nil }
+        return percent / 100
+    }
+}
+
 /// Gestisce la scoperta degli scanner e la comunicazione tramite ImageCaptureCore
 /// (lo stesso framework usato da Acquisizione Immagini e Anteprima).
 /// I callback di ImageCaptureCore arrivano sul main thread.
@@ -19,38 +26,52 @@ final class ScannerManager: NSObject, ObservableObject {
 
     @Published private(set) var scanners: [ICScannerDevice] = []
     @Published private(set) var selectedScanner: ICScannerDevice?
-    @Published private(set) var phase: Phase = .idle
+    @Published private(set) var phase: Phase = .idle {
+        didSet { if oldValue == .scanning && phase != .scanning { stopProgressUpdates() } }
+    }
     @Published private(set) var availableSources: [ICScannerFunctionalUnitType] = []
     @Published private(set) var activeSource: ICScannerFunctionalUnitType?
     @Published private(set) var resolutions: [Int] = []
     /// Dimensioni fisiche dell'area di scansione, in pollici
     @Published private(set) var physicalSize = CGSize(width: 8.5, height: 11.69)
-    @Published private(set) var overviewImage: CGImage?
+    @Published private(set) var overviewImage: CGImage? {
+        didSet { if overviewImage == nil && oldValue != nil { onOverviewCleared?() } }
+    }
     @Published private(set) var supportsDuplex = false
     @Published private(set) var documentLoaded: Bool?
     @Published private(set) var pagesInCurrentJob = 0
+    /// Fraction reported by the driver; nil means no reliable progress is available.
+    @Published private(set) var scanProgress: Double?
+    @Published private(set) var lastScannedPreview: CGImage?
     @Published var errorMessage: String?
 
     /// Chiamato per ogni pagina ricevuta (immagine, dpi)
     var onPageScanned: ((CGImage, Double) -> Void)?
+    /// Called only for a newly completed, successful overview scan.
+    var onOverviewCompleted: ((CGImage) -> Void)?
+    var onOverviewCleared: (() -> Void)?
 
     var isBusy: Bool { phase == .overview || phase == .scanning }
     var isReady: Bool { phase == .ready }
 
     private let browser = ICDeviceBrowser()
+    private let discoverDevices: Bool
     private let downloadDirectory: URL
     private var pendingAction: (() -> Void)?
     private var lastResolution = 300
+    private var progressTimer: Timer?
     private var retryWork: DispatchWorkItem?
     private var retryCount = 0
     private var openAttempt = 0
     private var activationObserver: NSObjectProtocol?
 
-    override init() {
+    init(discoverDevices: Bool = true) {
+        self.discoverDevices = discoverDevices
         downloadDirectory = FileManager.default.temporaryDirectory
             .appendingPathComponent("ScanStudio-\(UUID().uuidString)", isDirectory: true)
         try? FileManager.default.createDirectory(at: downloadDirectory, withIntermediateDirectories: true)
         super.init()
+        guard discoverDevices else { return }
 
         browser.delegate = self
         let rawMask = ICDeviceTypeMask.scanner.rawValue
@@ -76,7 +97,8 @@ final class ScannerManager: NSObject, ObservableObject {
     deinit {
         if let activationObserver { NotificationCenter.default.removeObserver(activationObserver) }
         retryWork?.cancel()
-        browser.stop()
+        progressTimer?.invalidate()
+        if discoverDevices { browser.stop() }
         try? FileManager.default.removeItem(at: downloadDirectory)
     }
 
@@ -87,6 +109,8 @@ final class ScannerManager: NSObject, ObservableObject {
             current.requestCloseSession()
         }
         selectedScanner = scanner
+        stopProgressUpdates()
+        lastScannedPreview = nil
         overviewImage = nil
         availableSources = []
         activeSource = nil
@@ -197,7 +221,7 @@ final class ScannerManager: NSObject, ObservableObject {
         withUnit(settings.source) { [weak self] scanner, unit in
             guard let self else { return }
             guard unit.type != .documentFeeder else {
-                self.errorMessage = "L'anteprima non è disponibile con l'alimentatore automatico."
+                self.errorMessage = localized("L'anteprima non è disponibile con l'alimentatore automatico.")
                 return
             }
             self.configure(unit, settings: settings, forOverview: true)
@@ -217,9 +241,29 @@ final class ScannerManager: NSObject, ObservableObject {
             scanner.documentUTI = UTType.tiff.identifier
 
             self.pagesInCurrentJob = 0
+            self.lastScannedPreview = nil
+            self.scanProgress = nil
             self.phase = .scanning
+            self.startProgressUpdates(scanner: scanner)
             scanner.requestScan()
         }
+    }
+
+    private func startProgressUpdates(scanner: ICScannerDevice) {
+        progressTimer?.invalidate()
+        progressTimer = Timer.scheduledTimer(withTimeInterval: 0.25, repeats: true) { [weak self, weak scanner] _ in
+            guard let self, let scanner, self.phase == .scanning, self.selectedScanner === scanner else { return }
+            let selectedUnit: ICScannerFunctionalUnit? = scanner.selectedFunctionalUnit
+            guard let unit = selectedUnit, unit.scanInProgress else { return }
+            // Some drivers always report zero or an invalid sentinel: keep the spinner indeterminate.
+            self.scanProgress = ScannerProgress.fraction(percent: Double(unit.scanProgressPercentDone), inProgress: true)
+        }
+    }
+
+    private func stopProgressUpdates() {
+        progressTimer?.invalidate()
+        progressTimer = nil
+        scanProgress = nil
     }
 
     func cancel() {
@@ -232,7 +276,7 @@ final class ScannerManager: NSObject, ObservableObject {
     private func withUnit(_ type: ICScannerFunctionalUnitType,
                           _ action: @escaping (ICScannerDevice, ICScannerFunctionalUnit) -> Void) {
         guard let scanner = selectedScanner, scanner.hasOpenSession, !isBusy else {
-            errorMessage = "Lo scanner non è pronto."
+            errorMessage = localized("Lo scanner non è pronto.")
             return
         }
         let current: ICScannerFunctionalUnit? = scanner.selectedFunctionalUnit
@@ -349,7 +393,7 @@ final class ScannerManager: NSObject, ObservableObject {
         let ns = error as NSError
         // Annullamento da parte dell'utente: nessun messaggio
         if ns.code == -9923 || ns.localizedDescription.lowercased().contains("cancel") { return }
-        errorMessage = "\(context): \(ns.localizedDescription) (codice \(ns.code))"
+        errorMessage = localizedFormat("%@: %@ (codice %lld)", context, ns.localizedDescription, ns.code)
     }
 }
 
@@ -389,7 +433,7 @@ extension ScannerManager: ICScannerDeviceDelegate {
         if let error {
             phase = .idle
             // Segnala l'errore solo al primo tentativo, poi riprova in silenzio
-            if retryCount == 0 { report(error, context: "Impossibile aprire la sessione con lo scanner") }
+            if retryCount == 0 { report(error, context: localized("Impossibile aprire la sessione con lo scanner")) }
             scheduleReconnect()
             return
         }
@@ -411,7 +455,7 @@ extension ScannerManager: ICScannerDeviceDelegate {
     }
 
     func device(_ device: ICDevice, didEncounterError error: Error?) {
-        report(error, context: "Errore dello scanner")
+        report(error, context: localized("Errore dello scanner"))
     }
 
     func scannerDeviceDidBecomeAvailable(_ scanner: ICScannerDevice) {
@@ -432,7 +476,7 @@ extension ScannerManager: ICScannerDeviceDelegate {
             } else {
                 phase = .idle
             }
-            report(error, context: "Impossibile selezionare la sorgente")
+            report(error, context: localized("Impossibile selezionare la sorgente"))
             return
         }
         refresh(from: functionalUnit)
@@ -447,30 +491,34 @@ extension ScannerManager: ICScannerDeviceDelegate {
         defer { try? FileManager.default.removeItem(at: url) }
         guard let data = try? Data(contentsOf: url),
               let loaded = ImageUtilities.load(data: data) else {
-            errorMessage = "Impossibile leggere l'immagine ricevuta dallo scanner."
+            errorMessage = localized("Impossibile leggere l'immagine ricevuta dallo scanner.")
             return
         }
         pagesInCurrentJob += 1
+        scanProgress = nil
+        lastScannedPreview = ImageUtilities.downscale(loaded.image, maxSide: 2000)
         onPageScanned?(loaded.image, loaded.dpi ?? Double(lastResolution))
     }
 
     func scannerDevice(_ scanner: ICScannerDevice, didCompleteOverviewScanWithError error: Error?) {
         phase = .ready
         if let error {
-            report(error, context: "Anteprima non riuscita")
+            report(error, context: localized("Anteprima non riuscita"))
             return
         }
         let unit: ICScannerFunctionalUnit? = scanner.selectedFunctionalUnit
         let overview: CGImage? = unit?.overviewImage
         overviewImage = overview
+        if let overview { onOverviewCompleted?(overview) }
     }
 
     func scannerDevice(_ scanner: ICScannerDevice, didCompleteScanWithError error: Error?) {
+        stopProgressUpdates()
         phase = .ready
         let unit: ICScannerFunctionalUnit? = scanner.selectedFunctionalUnit
         if let feeder = unit as? ICScannerFunctionalUnitDocumentFeeder {
             documentLoaded = feeder.documentLoaded
         }
-        report(error, context: "Scansione non riuscita")
+        report(error, context: localized("Scansione non riuscita"))
     }
 }

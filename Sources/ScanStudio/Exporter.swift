@@ -9,12 +9,14 @@ enum ExportError: LocalizedError {
     case renderFailed(Int)
     case cannotCreate(String)
     case writeFailed(String)
+    case markdownFailed(String)
 
     var errorDescription: String? {
         switch self {
-        case .renderFailed(let page): return "Elaborazione della pagina \(page) non riuscita."
-        case .cannotCreate(let name): return "Impossibile creare il file \(name)."
-        case .writeFailed(let name): return "Scrittura del file \(name) non riuscita."
+        case .renderFailed(let page): return localizedFormat("Elaborazione della pagina %lld non riuscita.", page)
+        case .cannotCreate(let name): return localizedFormat("Impossibile creare il file %@.", name)
+        case .markdownFailed(let reason): return localizedFormat("La scansione è stata salvata, ma il Markdown non è stato creato: %@", reason)
+        case .writeFailed(let name): return localizedFormat("Scrittura del file %@ non riuscita.", name)
         }
     }
 }
@@ -25,17 +27,85 @@ enum Exporter {
     static func export(pages: [ScannedPage],
                        options: ExportOptions,
                        to url: URL,
-                       progress: @escaping (Double) -> Void) throws -> [URL] {
-        switch options.format {
-        case .pdf:
-            try writePDF(pages: pages, options: options, to: url, progress: progress)
-            return [url]
-        case .tiff:
-            try writeMultiPageTIFF(pages: pages, to: url, progress: progress)
-            return [url]
-        case .png, .jpeg:
-            return try writeSeparateFiles(pages: pages, options: options, base: url, progress: progress)
+                       progress: @escaping (Double) -> Void) async throws -> [URL] {
+        let needsOCR = options.exportMarkdown || options.format.isPDF
+        var recognized: [DocumentOCRResult] = []
+        if needsOCR {
+            for (index, page) in pages.enumerated() {
+                recognized.append(try await DocumentOCRCache.shared.recognize(page))
+                progress(0.5 * Double(index + 1) / Double(pages.count))
+            }
         }
+        let report: (Double) -> Void = { progress(needsOCR ? 0.5 + $0 * 0.5 : $0) }
+        var written: [URL]
+        if options.format.isSeparateDocument && pages.count > 1 && (options.format.isPDF || options.format == .tiffSingle) {
+            written = []
+            for (index, page) in pages.enumerated() {
+                let candidate = numberedURL(base: url, index: index)
+                let destination = uniqueURL(candidate)
+                switch options.format {
+                case .pdf, .pdfSingle:
+                    let pageOCR = needsOCR ? [recognized[index]] : []
+                    try writePDF(pages: [page], options: options, recognized: pageOCR, to: destination) { _ in }
+                case .tiff, .tiffSingle:
+                    try writeMultiPageTIFF(pages: [page], to: destination) { _ in }
+                case .png, .jpeg: break
+                }
+                written.append(destination)
+                report(Double(index + 1) / Double(pages.count))
+            }
+        } else {
+            switch options.format {
+            case .pdf, .pdfSingle:
+                try writePDF(pages: pages, options: options, recognized: recognized, to: url, progress: report)
+                written = [url]
+            case .tiff, .tiffSingle:
+                try writeMultiPageTIFF(pages: pages, to: url, progress: report)
+                written = [url]
+            case .png, .jpeg:
+                written = try writeSeparateFiles(pages: pages, options: options, base: url, progress: report)
+            }
+        }
+        if options.exportMarkdown {
+            var structured: [String] = []
+            for result in recognized { structured.append(await MarkdownStructure.enrich(result.markdown)) }
+            if (options.format == .pdfSingle || options.format == .tiffSingle || (options.scope == .multiCrop && options.format.isSeparateDocument)) && written.count == recognized.count && written.count > 1 {
+                let scanFiles = written
+                for (index, scan) in scanFiles.enumerated() {
+                    let destination = uniqueURL(scan.deletingPathExtension().appendingPathExtension("md"))
+                    do { try (structured[index] + "\n").write(to: destination, atomically: true, encoding: .utf8) }
+                    catch { throw ExportError.markdownFailed(error.localizedDescription) }
+                    written.append(destination)
+                }
+            } else {
+                let destination = uniqueURL(url.deletingPathExtension().appendingPathExtension("md"))
+                let markdown = structured.enumerated().map { index, markdown in
+                    structured.count > 1 ? "## \(localizedFormat("Pagina %lld", index + 1))\n\n\(markdown)" : markdown
+                }.joined(separator: "\n\n---\n\n") + "\n"
+                do { try markdown.write(to: destination, atomically: true, encoding: .utf8) }
+                catch { throw ExportError.markdownFailed(error.localizedDescription) }
+                written.append(destination)
+            }
+        }
+        return written
+    }
+
+    private static func numberedURL(base: URL, index: Int) -> URL {
+        let folder = base.deletingLastPathComponent()
+        let stem = base.deletingPathExtension().lastPathComponent
+        return folder.appendingPathComponent(String(format: "%@-%03d", stem, index + 1)).appendingPathExtension(base.pathExtension)
+    }
+
+    private static func uniqueURL(_ candidate: URL) -> URL {
+        var result = candidate
+        var suffix = 2
+        while FileManager.default.fileExists(atPath: result.path) {
+            result = candidate.deletingLastPathComponent()
+                .appendingPathComponent("\(candidate.deletingPathExtension().lastPathComponent) \(suffix)")
+                .appendingPathExtension(candidate.pathExtension)
+            suffix += 1
+        }
+        return result
     }
 
     private static func rendered(_ page: ScannedPage, index: Int) throws -> CGImage {
@@ -48,7 +118,7 @@ enum Exporter {
 
     // MARK: - PDF
 
-    private static func writePDF(pages: [ScannedPage], options: ExportOptions, to url: URL,
+    private static func writePDF(pages: [ScannedPage], options: ExportOptions, recognized: [DocumentOCRResult], to url: URL,
                                  progress: @escaping (Double) -> Void) throws {
         let info = [kCGPDFContextCreator: "ScanStudio"] as CFDictionary
         guard let ctx = CGContext(url as CFURL, mediaBox: nil, info) else {
@@ -74,10 +144,7 @@ enum Exporter {
                 ctx.interpolationQuality = .high
                 ctx.draw(drawable, in: mediaBox)
 
-                if options.ocr {
-                    let lines = TextRecognizer.recognize(image)
-                    TextRecognizer.drawInvisible(lines, in: ctx, pageRect: mediaBox)
-                }
+                TextRecognizer.drawInvisible(recognized[i].lines, in: ctx, pageRect: mediaBox)
                 ctx.endPDFPage()
             }
             progress(Double(i + 1) / Double(pages.count))
@@ -115,7 +182,7 @@ enum Exporter {
         for (i, page) in pages.enumerated() {
             let url = pages.count == 1
                 ? base
-                : folder.appendingPathComponent(String(format: "%@-%03d.%@", stem, i + 1, ext))
+                : uniqueURL(folder.appendingPathComponent(String(format: "%@-%03d.%@", stem, i + 1, ext)))
             try autoreleasepool {
                 let image = try rendered(page, index: i)
                 let final = prepared(image, mode: page.mode, format: options.format)
@@ -165,27 +232,9 @@ enum Exporter {
 
 enum TextRecognizer {
 
-    struct Line {
-        let text: String
-        let box: CGRect   // normalizzato, origine in basso a sinistra (come il PDF)
-    }
-
-    static func recognize(_ image: CGImage) -> [Line] {
-        let request = VNRecognizeTextRequest()
-        request.recognitionLevel = .accurate
-        request.usesLanguageCorrection = true
-        request.recognitionLanguages = ["it-IT", "en-US"]
-        let handler = VNImageRequestHandler(cgImage: image, options: [:])
-        do { try handler.perform([request]) } catch { return [] }
-        return (request.results ?? []).compactMap { obs in
-            guard let candidate = obs.topCandidates(1).first else { return nil }
-            return Line(text: candidate.string, box: obs.boundingBox)
-        }
-    }
-
     /// Disegna il testo in modalità invisibile sopra l'immagine:
     /// il PDF diventa selezionabile e ricercabile senza cambiare aspetto.
-    static func drawInvisible(_ lines: [Line], in ctx: CGContext, pageRect: CGRect) {
+    static func drawInvisible(_ lines: [DocumentOCRResult.Line], in ctx: CGContext, pageRect: CGRect) {
         for line in lines where !line.text.isEmpty {
             let rect = CGRect(x: pageRect.minX + line.box.minX * pageRect.width,
                               y: pageRect.minY + line.box.minY * pageRect.height,
